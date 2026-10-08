@@ -14,6 +14,8 @@ const plusJakarta = Plus_Jakarta_Sans({
   display: "swap",
 });
 
+import { ToastProvider } from "@/components/ui/toast-provider";
+
 export const metadata: Metadata = {
   title: "Orqiva ERP | Bespoke Modular Enterprise Monolith",
   description:
@@ -31,6 +33,7 @@ export default function RootLayout({
         className={`${inter.variable} ${plusJakarta.variable} font-sans min-h-screen bg-slate-950 text-slate-100 antialiased selection:bg-amber-500 selection:text-slate-950`}
       >
         {children}
+        <ToastProvider />
       </body>
     </html>
   );

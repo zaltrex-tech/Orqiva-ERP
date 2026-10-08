@@ -119,7 +119,6 @@ async function main() {
       },
     });
   }
-  console.log("✅ Seeded Double-Entry Chart of Accounts");
 
   // 4. Journals
   const journalsData = [
@@ -142,124 +141,237 @@ async function main() {
       },
     });
   }
-  console.log("✅ Seeded Standard Accounting Journals");
 
-  // 5. Multi-Warehouse Setup
-  const warehouse = await prisma.warehouse.upsert({
-    where: { tenantId_code: { tenantId: tenant.id, code: "WH-NORTH" } },
+  // 5. Default Branch (Warehouse & Locations)
+  const branch = await prisma.warehouse.upsert({
+    where: { tenantId_code: { tenantId: tenant.id, code: "BRANCH-MAIN" } },
     update: {},
     create: {
       tenantId: tenant.id,
-      code: "WH-NORTH",
-      name: "Northern Logistics Hub",
-      address: "Industrial Gateway Blvd, Bldg 4",
+      code: "BRANCH-MAIN",
+      name: "Orqiva Flagship Branch & Central Distribution",
+      address: "742 Evergreen Commercial Plaza, Suite 100",
     },
   });
 
-  const internalStockLoc = await prisma.location.create({
-    data: {
+  const internalStockLoc = await prisma.location.upsert({
+    where: { id: "loc-branch-main-stock" },
+    update: {},
+    create: {
+      id: "loc-branch-main-stock",
       tenantId: tenant.id,
-      warehouseId: warehouse.id,
-      name: "WH-NORTH/Stock",
-      barcode: "LOC-WHN-STK",
+      warehouseId: branch.id,
+      name: "BRANCH-MAIN/Stock",
+      barcode: "LOC-MAIN-STK",
       type: LocationType.INTERNAL,
     },
   });
 
-  const customerLoc = await prisma.location.create({
-    data: {
+  const customerLoc = await prisma.location.upsert({
+    where: { id: "loc-virtual-customer" },
+    update: {},
+    create: {
+      id: "loc-virtual-customer",
       tenantId: tenant.id,
-      name: "Virtual / Customers",
+      name: "Virtual / Commercial Customers",
       type: LocationType.CUSTOMER,
     },
   });
 
-  // 6. Product Category & Products
-  const category = await prisma.productCategory.upsert({
-    where: { tenantId_code: { tenantId: tenant.id, code: "CAT-TECH" } },
+  // 6. Product Categories
+  const catHardware = await prisma.productCategory.upsert({
+    where: { tenantId_code: { tenantId: tenant.id, code: "CAT-HW" } },
     update: {},
     create: {
       tenantId: tenant.id,
-      name: "Enterprise Hardware & POS Peripherals",
-      code: "CAT-TECH",
+      name: "POS & Computer Hardware",
+      code: "CAT-HW",
       valuationMethod: ValuationMethod.AVCO,
     },
   });
 
-  const productA = await prisma.product.upsert({
-    where: { tenantId_sku: { tenantId: tenant.id, sku: "PRD-POS-TERM" } },
+  const catSupplies = await prisma.productCategory.upsert({
+    where: { tenantId_code: { tenantId: tenant.id, code: "CAT-SUP" } },
     update: {},
     create: {
       tenantId: tenant.id,
-      categoryId: category.id,
-      sku: "PRD-POS-TERM",
-      barcode: "893452109823",
+      name: "Thermal Paper & Consumables",
+      code: "CAT-SUP",
+      valuationMethod: ValuationMethod.AVCO,
+    },
+  });
+
+  // 7. 10 Mock Products with Initial Stock Quants
+  const mockProductsList = [
+    {
+      sku: "PRD-POS-TERM-15",
       name: "Orqiva Touch POS Terminal Pro (15.6\")",
-      description: "High-throughput capacitive terminal with NFC and thermal receipt hub",
+      description: "Capacitive multi-touch terminal with integrated MSR",
       costPrice: 420.0,
       sellingPrice: 750.0,
       taxRate: 15.0,
       minStockAlert: 15,
+      qty: 120,
+      categoryId: catHardware.id,
     },
-  });
-
-  const productB = await prisma.product.upsert({
-    where: { tenantId_sku: { tenantId: tenant.id, sku: "PRD-BAR-SCAN" } },
-    update: {},
-    create: {
-      tenantId: tenant.id,
-      categoryId: category.id,
-      sku: "PRD-BAR-SCAN",
-      barcode: "893452109855",
+    {
+      sku: "PRD-BAR-SCAN-2D",
       name: "Omni-directional 2D Barcode Scanner",
-      description: "Ultra-fast laser barcode scanner with ruggedized drop-proof casing",
+      description: "Rugged hands-free presentation barcode scanner",
       costPrice: 65.0,
       sellingPrice: 140.0,
       taxRate: 15.0,
+      minStockAlert: 20,
+      qty: 350,
+      categoryId: catHardware.id,
+    },
+    {
+      sku: "PRD-REC-PRN-80",
+      name: "High-Speed Thermal Receipt Printer (80mm)",
+      description: "Auto-cutter, Ethernet + USB + Serial interfaces",
+      costPrice: 85.0,
+      sellingPrice: 195.0,
+      taxRate: 15.0,
       minStockAlert: 25,
+      qty: 90,
+      categoryId: catHardware.id,
     },
-  });
+    {
+      sku: "PRD-CSH-DRW-HV",
+      name: "Heavy-Duty Steel Cash Drawer (5B/8C)",
+      description: "Electronic RJ12 solenoid kick with dual media slots",
+      costPrice: 45.0,
+      sellingPrice: 110.0,
+      taxRate: 15.0,
+      minStockAlert: 10,
+      qty: 65,
+      categoryId: catHardware.id,
+    },
+    {
+      sku: "PRD-CUST-DISP-VFD",
+      name: "2-Line VFD Pole Customer Display",
+      description: "Bright blue-green fluorescent alphanumeric screen",
+      costPrice: 38.0,
+      sellingPrice: 85.0,
+      taxRate: 15.0,
+      minStockAlert: 10,
+      qty: 40,
+      categoryId: catHardware.id,
+    },
+    {
+      sku: "PRD-THM-PPR-80M",
+      name: "Thermal Paper Roll Box (80mm x 80m, Box of 50)",
+      description: "BPA-free high-sensitivity premium thermal paper rolls",
+      costPrice: 28.0,
+      sellingPrice: 65.0,
+      taxRate: 15.0,
+      minStockAlert: 30,
+      qty: 180,
+      categoryId: catSupplies.id,
+    },
+    {
+      sku: "PRD-THM-LBL-4X6",
+      name: "Direct Thermal Shipping Labels (4\"x6\", Roll of 500)",
+      description: "Permanent adhesive smudge-proof logistics label rolls",
+      costPrice: 8.5,
+      sellingPrice: 22.0,
+      taxRate: 15.0,
+      minStockAlert: 50,
+      qty: 240,
+      categoryId: catSupplies.id,
+    },
+    {
+      sku: "PRD-NFC-PIN-PAD",
+      name: "PCI-PTS Certified Contactless Pin Pad",
+      description: "Apple Pay, Google Pay, and EMV chip verified terminal",
+      costPrice: 140.0,
+      sellingPrice: 290.0,
+      taxRate: 15.0,
+      minStockAlert: 15,
+      qty: 55,
+      categoryId: catHardware.id,
+    },
+    {
+      sku: "PRD-WIFI-SCALE",
+      name: "Integrated Bench POS Scale (15kg x 2g)",
+      description: "Legal-for-trade stainless steel barcode scale with RS232",
+      costPrice: 180.0,
+      sellingPrice: 380.0,
+      taxRate: 15.0,
+      minStockAlert: 8,
+      qty: 25,
+      categoryId: catHardware.id,
+    },
+    {
+      sku: "PRD-UPS-BATT-850",
+      name: "POS Pure Sine Wave UPS Backup (850VA)",
+      description: "Protects register against line brownouts and power surges",
+      costPrice: 75.0,
+      sellingPrice: 160.0,
+      taxRate: 15.0,
+      minStockAlert: 12,
+      qty: 45,
+      categoryId: catHardware.id,
+    },
+  ];
 
-  // 7. Seed Initial Stock Quants with Row Concurrency
-  await prisma.stockQuant.upsert({
-    where: {
-      tenantId_productId_locationId: {
-        tenantId: tenant.id,
-        productId: productA.id,
-        locationId: internalStockLoc.id,
+  for (const prod of mockProductsList) {
+    const createdProduct = await prisma.product.upsert({
+      where: { tenantId_sku: { tenantId: tenant.id, sku: prod.sku } },
+      update: {
+        costPrice: prod.costPrice,
+        sellingPrice: prod.sellingPrice,
       },
-    },
+      create: {
+        tenantId: tenant.id,
+        categoryId: prod.categoryId,
+        sku: prod.sku,
+        name: prod.name,
+        description: prod.description,
+        costPrice: prod.costPrice,
+        sellingPrice: prod.sellingPrice,
+        taxRate: prod.taxRate,
+        minStockAlert: prod.minStockAlert,
+      },
+    });
+
+    await prisma.stockQuant.upsert({
+      where: {
+        tenantId_productId_locationId: {
+          tenantId: tenant.id,
+          productId: createdProduct.id,
+          locationId: internalStockLoc.id,
+        },
+      },
+      update: {
+        quantity: prod.qty,
+      },
+      create: {
+        tenantId: tenant.id,
+        productId: createdProduct.id,
+        locationId: internalStockLoc.id,
+        quantity: prod.qty,
+        reservedQuantity: 0.0,
+      },
+    });
+  }
+
+  console.log(`✅ Seeded 10 Mock Products & Stock Quants for Branch: ${branch.name}`);
+
+  // 8. Seed Open POS Session for Sarah Jenkins (Cashier)
+  await prisma.posSession.upsert({
+    where: { tenantId_sessionNumber: { tenantId: tenant.id, sessionNumber: "POS-SESS-00045" } },
     update: {},
     create: {
       tenantId: tenant.id,
-      productId: productA.id,
-      locationId: internalStockLoc.id,
-      quantity: 120.0,
-      reservedQuantity: 0.0,
+      cashierId: cashier.id,
+      sessionNumber: "POS-SESS-00045",
+      openingBalance: 250.0,
+      totalSales: 12480.0,
     },
   });
 
-  await prisma.stockQuant.upsert({
-    where: {
-      tenantId_productId_locationId: {
-        tenantId: tenant.id,
-        productId: productB.id,
-        locationId: internalStockLoc.id,
-      },
-    },
-    update: {},
-    create: {
-      tenantId: tenant.id,
-      productId: productB.id,
-      locationId: internalStockLoc.id,
-      quantity: 350.0,
-      reservedQuantity: 0.0,
-    },
-  });
-
-  console.log("✅ Seeded Warehouses, Locations, Products & Stock Quants");
-
-  // 8. Seed Sample HR Employee
+  // 9. Seed Sample HR Employee
   await prisma.employee.upsert({
     where: { tenantId_employeeCode: { tenantId: tenant.id, employeeCode: "EMP-00101" } },
     update: {},
@@ -276,7 +388,6 @@ async function main() {
     },
   });
 
-  console.log("✅ Seeded Initial HR Employee Directory");
   console.log("🎉 Seeding Completed Successfully.");
 }
 
