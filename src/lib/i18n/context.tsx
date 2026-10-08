@@ -9,12 +9,12 @@ const dictionaries = { en, ar };
 
 const I18nContext = createContext<I18nContextType | null>(null);
 
-function getNestedValue(obj: Record<string, any>, path: string): string | undefined {
+function getNestedValue(obj: Record<string, unknown>, path: string): string | undefined {
   const keys = path.split(".");
-  let current: any = obj;
+  let current: unknown = obj;
   for (const k of keys) {
-    if (current && typeof current === "object" && k in current) {
-      current = current[k];
+    if (current && typeof current === "object" && k in (current as Record<string, unknown>)) {
+      current = (current as Record<string, unknown>)[k];
     } else {
       return undefined;
     }

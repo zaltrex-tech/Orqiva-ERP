@@ -95,8 +95,9 @@ export class PurchaseService {
       });
 
       return ok({ id: vendor.id, name: vendor.name, code: vendor.code });
-    } catch (e: any) {
-      return err(`Failed to create vendor: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return err(`Failed to create vendor: ${msg}`);
     }
   }
 
@@ -153,8 +154,9 @@ export class PurchaseService {
       });
 
       return ok(result);
-    } catch (e: any) {
-      return err(`Failed to create purchase order: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return err(`Failed to create purchase order: ${msg}`);
     }
   }
 
@@ -300,8 +302,9 @@ export class PurchaseService {
       });
 
       return ok(receiptResult);
-    } catch (e: any) {
-      return err(`Failed to receive goods: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return err(`Failed to receive goods: ${msg}`);
     }
   }
 
@@ -364,8 +367,9 @@ export class PurchaseService {
         billedTotal: po.status === PurchaseOrderStatus.BILLED ? poTotal : 0,
         discrepancies,
       });
-    } catch (e: any) {
-      return err(`3-Way matching verification failed: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return err(`3-Way matching verification failed: ${msg}`);
     }
   }
 
@@ -485,8 +489,9 @@ export class PurchaseService {
       });
 
       return ok({ billEntryId: postResult.value.entryId });
-    } catch (e: any) {
-      return err(`Vendor billing failed: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return err(`Vendor billing failed: ${msg}`);
     }
   }
 }

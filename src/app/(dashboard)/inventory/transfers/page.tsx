@@ -98,8 +98,9 @@ export default function StockTransfersPage() {
           items: [{ productId: json.data.products[0]?.id || "", quantity: 5 }],
         }));
       }
-    } catch (err: any) {
-      toast.error(err.message || "Failed to fetch transfers");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(msg || "Failed to fetch transfers");
     } finally {
       setLoading(false);
     }
@@ -112,15 +113,15 @@ export default function StockTransfersPage() {
   const handleCreateTransfer = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.sourceLocationId || !form.destLocationId) {
-      toast.warning("Select origin and destination locations");
+      toast.warning(t("transfers.selectLocationsWarning", "Select origin and destination locations"));
       return;
     }
     if (form.sourceLocationId === form.destLocationId) {
-      toast.error("Source and destination locations cannot be the same");
+      toast.error(t("transfers.sameLocationError", "Source and destination locations cannot be the same"));
       return;
     }
     if (form.items.some((i) => !i.productId || i.quantity <= 0)) {
-      toast.warning("Specify valid products and quantities for all lines");
+      toast.warning(t("transfers.invalidProductsWarning", "Specify valid products and quantities for all lines"));
       return;
     }
 
@@ -151,8 +152,9 @@ export default function StockTransfersPage() {
         items: [{ productId: products[0]?.id || "", quantity: 5 }],
       });
       await fetchData();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to create transfer");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(msg || "Failed to create transfer");
     } finally {
       setSubmitting(false);
     }
@@ -173,8 +175,9 @@ export default function StockTransfersPage() {
         description: "Stock reserved and deducted from source shelf under row-level lock.",
       });
       await fetchData();
-    } catch (err: any) {
-      toast.error(err.message || "Dispatch failed");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(msg || "Dispatch failed");
     }
   };
 
@@ -193,8 +196,9 @@ export default function StockTransfersPage() {
         description: "Destination inventory credited. Transfer lifecycle completed.",
       });
       await fetchData();
-    } catch (err: any) {
-      toast.error(err.message || "Reception failed");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(msg || "Reception failed");
     }
   };
 
@@ -214,7 +218,7 @@ export default function StockTransfersPage() {
                 {t("nav.inventory", "Inventory & Logistics")}
               </Badge>
               <span className="text-muted-foreground text-xs">•</span>
-              <span className="text-muted-foreground text-xs font-mono">Row-Level Locking</span>
+              <span className="text-muted-foreground text-xs font-mono">{t("transfers.rowLevelLocking", "Row-Level Locking")}</span>
             </div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
               <ArrowLeftRight className="h-7 w-7 text-amber-500" />
@@ -260,7 +264,13 @@ export default function StockTransfersPage() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {st === "ALL" ? "All Transfers" : st.replace("_", " ")}
+              {st === "ALL"
+                ? t("transfers.allTransfers", "All Transfers")
+                : st === "DRAFT"
+                ? t("transfers.statusDraft", "Draft")
+                : st === "IN_TRANSIT"
+                ? t("transfers.statusInTransit", "In Transit")
+                : t("transfers.statusCompleted", "Completed")}
             </button>
           ))}
         </div>
@@ -270,10 +280,10 @@ export default function StockTransfersPage() {
           <div className="p-4 border-b border-border/40 flex items-center justify-between">
             <h3 className="font-semibold text-foreground text-sm flex items-center gap-2">
               <Truck className="h-4 w-4 text-amber-500" />
-              Transit Operations Ledger
+              {t("transfers.ledgerTitle", "Transit Operations Ledger")}
             </h3>
             <span className="text-xs font-mono text-muted-foreground">
-              {filteredTransfers.length} Records
+              {filteredTransfers.length} {t("transfers.records", "Records")}
             </span>
           </div>
 
@@ -284,16 +294,16 @@ export default function StockTransfersPage() {
                   <th className="py-3 px-4 text-start">{t("transfers.transferNumber", "Transfer #")}</th>
                   <th className="py-3 px-4 text-start">{t("transfers.sourceLocation", "Origin")}</th>
                   <th className="py-3 px-4 text-start">{t("transfers.destLocation", "Destination")}</th>
-                  <th className="py-3 px-4 text-start">Items</th>
-                  <th className="py-3 px-4 text-start">Status</th>
-                  <th className="py-3 px-4 text-end">Action</th>
+                  <th className="py-3 px-4 text-start">{t("transfers.itemsHeader", "Items")}</th>
+                  <th className="py-3 px-4 text-start">{t("transfers.statusHeader", "Status")}</th>
+                  <th className="py-3 px-4 text-end">{t("transfers.actionHeader", "Action")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/20">
                 {filteredTransfers.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="text-center py-10 text-muted-foreground italic">
-                      No stock transfers found in this view.
+                      {t("transfers.empty", "No stock transfers found in this view.")}
                     </td>
                   </tr>
                 ) : (
@@ -365,7 +375,7 @@ export default function StockTransfersPage() {
                           </Button>
                         )}
                         {tr.status === "COMPLETED" && (
-                          <span className="text-emerald-400 text-xs font-mono">Verified</span>
+                          <span className="text-emerald-400 text-xs font-mono">{t("transfers.verified", "Verified")}</span>
                         )}
                       </td>
                     </tr>
@@ -449,7 +459,7 @@ export default function StockTransfersPage() {
                 <div className="space-y-2 border-t border-slate-800 pt-3">
                   <div className="flex justify-between items-center">
                     <span className="font-semibold text-slate-300 uppercase tracking-wider text-[11px]">
-                      Items to Transfer
+                      {t("transfers.itemsToTransfer", "Items to Transfer")}
                     </span>
                     <Button
                       type="button"
@@ -463,7 +473,7 @@ export default function StockTransfersPage() {
                       }
                       className="text-xs text-amber-400 h-6 px-2"
                     >
-                      + Add Item
+                      {t("transfers.addItem", "+ Add Item")}
                     </Button>
                   </div>
 
@@ -512,12 +522,14 @@ export default function StockTransfersPage() {
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Transit Notes</label>
+                  <label className="block text-slate-300 font-semibold mb-1">
+                    {t("transfers.transitNotes", "Transit Notes")}
+                  </label>
                   <input
                     type="text"
                     value={form.notes}
                     onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                    placeholder="e.g. Express van delivery"
+                    placeholder={t("transfers.transitNotesPlaceholder", "e.g. Express van delivery")}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200"
                   />
                 </div>
@@ -532,7 +544,7 @@ export default function StockTransfersPage() {
                     disabled={submitting}
                     className="bg-amber-600 hover:bg-amber-500 text-white font-medium"
                   >
-                    {submitting ? "Creating..." : "Save Draft Transfer"}
+                    {submitting ? t("transfers.creating", "Creating...") : t("transfers.saveDraftTransfer", "Save Draft Transfer")}
                   </Button>
                 </div>
               </form>

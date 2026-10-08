@@ -34,8 +34,10 @@ export function startLedgerWorker(): Worker | null {
           console.log(`[Worker]: Processed Period Close for Tenant ${job.data.tenantId}`);
           break;
 
-        default:
-          console.warn(`[Worker]: Unrecognized job type: ${(job.data as any).entryType}`);
+        default: {
+          const entryType = (job.data as { entryType?: string })?.entryType ?? "UNKNOWN";
+          console.warn(`[Worker]: Unrecognized job type: ${entryType}`);
+        }
       }
 
       return { status: "completed", timestamp: new Date().toISOString() };

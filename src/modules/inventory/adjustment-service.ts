@@ -11,6 +11,12 @@ import {
   Prisma,
 } from "@prisma/client";
 
+interface QuantRow {
+  id: string;
+  quantity: number | string;
+  reservedQuantity?: number | string;
+}
+
 export interface StockAdjustmentLineInput {
   productId: string;
   countedQuantity: number;
@@ -98,7 +104,7 @@ export class AdjustmentService {
           const unitCost = Number(product.costPrice) || 0;
 
           // Lock source quant using SELECT FOR UPDATE
-          const quants: any[] = await tx.$queryRaw`
+          const quants: QuantRow[] = await tx.$queryRaw`
             SELECT id, quantity, "reservedQuantity"
             FROM stock_quants
             WHERE "tenantId" = ${tenantId}
@@ -260,8 +266,9 @@ export class AdjustmentService {
         journalEntryId: postedJournalEntryId,
         linesCount: outcome.calculatedLines.length,
       });
-    } catch (e: any) {
-      return err(e.message || "Failed to execute stock adjustment reconciliation.");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return err(msg || "Failed to execute stock adjustment reconciliation.");
     }
   }
 }

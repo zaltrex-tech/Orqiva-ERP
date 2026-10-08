@@ -72,7 +72,8 @@ export async function GET() {
         }),
       },
     });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ success: false, error: errorMsg }, { status: 500 });
   }
 }

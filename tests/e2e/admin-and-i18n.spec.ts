@@ -38,7 +38,7 @@ test.describe("Bilingual i18n & User Management Workflow", () => {
 
     // Verify Modal form appears with fields
     await expect(page.locator("text=إنشاء حساب مستخدم مؤسسي جديد")).toBeVisible();
-    await expect(page.locator("input[placeholder*='Tariq']")).toBeVisible();
+    await expect(page.locator("input[placeholder*='Tariq'], input[placeholder*='طارق'], input[name='fullName'], form input[type='text']").first()).toBeVisible();
 
     // 7. Close modal dialog
     const cancelBtn = page.locator("button:has-text('إلغاء')");

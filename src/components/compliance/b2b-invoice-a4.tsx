@@ -5,6 +5,7 @@ import QRCode from "qrcode";
 import { ShieldCheck, Printer, FileText, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n/context";
 
 export interface B2BInvoiceLineItem {
   id: string;
@@ -64,6 +65,7 @@ export function B2BInvoiceA4({
   tlvBase64,
   onPrint,
 }: B2BInvoiceProps) {
+  const { t } = useI18n();
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
 
   useEffect(() => {
@@ -147,7 +149,7 @@ export function B2BInvoiceA4({
           className="bg-amber-600 hover:bg-amber-500 text-white font-medium shadow-md shadow-amber-600/20 text-xs"
         >
           <Printer className="h-4 w-4 me-2" />
-          Print A4 Tax Invoice
+          {t("b2bInvoice.printBtn", "Print A4 Tax Invoice")}
         </Button>
       </div>
 
@@ -164,23 +166,23 @@ export function B2BInvoiceA4({
             </div>
             <div className="text-xs text-slate-600 mt-1">{seller.address}</div>
             <div className="text-xs font-mono text-slate-800 mt-0.5">
-              VAT REG: <span className="font-bold">{seller.vatNumber}</span>
-              {seller.crNumber && ` • CR: ${seller.crNumber}`}
+              {t("b2bInvoice.vatReg", "VAT REG:")} <span className="font-bold">{seller.vatNumber}</span>
+              {seller.crNumber && ` • ${t("b2bInvoice.cr", "CR:")} ${seller.crNumber}`}
             </div>
           </div>
 
           <div className="text-start sm:text-end">
             <div className="inline-block px-3 py-1 bg-amber-500/10 border border-amber-500/30 text-amber-700 text-xs font-bold uppercase rounded-md tracking-wider mb-2">
-              TAX INVOICE / فاتورة ضريبية
+              {t("b2bInvoice.taxInvoiceBadge", "TAX INVOICE / فاتورة ضريبية")}
             </div>
             <div className="text-lg font-bold font-mono text-slate-900">
               #{invoiceNumber}
             </div>
             <div className="text-xs text-slate-500 mt-0.5">
-              Issue Date: <span className="font-medium text-slate-800">{issueDate}</span>
+              {t("b2bInvoice.issueDate", "Issue Date:")} <span className="font-medium text-slate-800">{issueDate}</span>
             </div>
             <div className="text-xs text-slate-500">
-              Due Date: <span className="font-medium text-slate-800">{dueDate}</span>
+              {t("b2bInvoice.dueDate", "Due Date:")} <span className="font-medium text-slate-800">{dueDate}</span>
             </div>
           </div>
         </div>
@@ -189,27 +191,27 @@ export function B2BInvoiceA4({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 my-6 p-4 bg-slate-50 rounded-lg border border-slate-100 text-xs">
           <div>
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
-              Billed To (العميل)
+              {t("b2bInvoice.billedTo", "Billed To (العميل)")}
             </span>
             <div className="font-bold text-sm text-slate-900">{customer.name}</div>
             {customer.address && <div className="text-slate-600 mt-0.5">{customer.address}</div>}
             {customer.vatNumber && (
               <div className="font-mono text-slate-800 mt-1">
-                Client VAT: <span className="font-semibold">{customer.vatNumber}</span>
+                {t("b2bInvoice.clientVat", "Client VAT:")} <span className="font-semibold">{customer.vatNumber}</span>
               </div>
             )}
           </div>
 
           <div className="sm:text-end">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
-              Fiscal Compliance Verification
+              {t("b2bInvoice.fiscalVerification", "Fiscal Compliance Verification")}
             </span>
             <div className="text-emerald-700 font-semibold flex sm:justify-end items-center gap-1.5">
               <CheckCircle2 className="h-4 w-4" />
-              ZATCA Phase 2 E-Invoice Standard
+              {t("b2bInvoice.zatcaStandard", "ZATCA Phase 2 E-Invoice Standard")}
             </div>
             <div className="text-[11px] text-slate-600 mt-0.5 font-mono">
-              Chained Ledger: SHA-256 Anti-Tamper
+              {t("b2bInvoice.chainedLedger", "Chained Ledger: SHA-256 Anti-Tamper")}
             </div>
           </div>
         </div>
@@ -219,12 +221,12 @@ export function B2BInvoiceA4({
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b-2 border-slate-900 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
-                <th className="py-2.5 px-3 text-start">SKU / Item</th>
-                <th className="py-2.5 px-3 text-start">Description</th>
-                <th className="py-2.5 px-3 text-end">Qty</th>
-                <th className="py-2.5 px-3 text-end">Unit Price</th>
-                <th className="py-2.5 px-3 text-end">Tax Rate</th>
-                <th className="py-2.5 px-3 text-end">Total ({currency})</th>
+                <th className="py-2.5 px-3 text-start">{t("b2bInvoice.skuItem", "SKU / Item")}</th>
+                <th className="py-2.5 px-3 text-start">{t("b2bInvoice.description", "Description")}</th>
+                <th className="py-2.5 px-3 text-end">{t("b2bInvoice.qty", "Qty")}</th>
+                <th className="py-2.5 px-3 text-end">{t("b2bInvoice.unitPrice", "Unit Price")}</th>
+                <th className="py-2.5 px-3 text-end">{t("b2bInvoice.taxRate", "Tax Rate")}</th>
+                <th className="py-2.5 px-3 text-end">{t("b2bInvoice.total", "Total")} ({currency})</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -268,13 +270,13 @@ export function B2BInvoiceA4({
               <div className="w-28 h-28 bg-slate-200 rounded-md animate-pulse shrink-0" />
             )}
             <div className="space-y-1 text-[10px] text-slate-600">
-              <div className="font-bold text-slate-900 text-xs">Fiscal QR Evidence</div>
-              <div>Standard: 5-Tag TLV Base64</div>
+              <div className="font-bold text-slate-900 text-xs">{t("b2bInvoice.fiscalQrEvidence", "Fiscal QR Evidence")}</div>
+              <div>{t("b2bInvoice.tlvStandard", "Standard: 5-Tag TLV Base64")}</div>
               <div className="font-mono text-[9px] break-all max-w-[200px]">
-                Prev Hash: {previousHash.slice(0, 16)}...
+                {t("b2bInvoice.prevHash", "Prev Hash:")} {previousHash.slice(0, 16)}...
               </div>
               <div className="font-mono text-[9px] font-bold text-slate-800 break-all max-w-[200px]">
-                Inv Hash: {invoiceHash ? invoiceHash.slice(0, 16) : "COMPUTING"}...
+                {t("b2bInvoice.invHash", "Inv Hash:")} {invoiceHash ? invoiceHash.slice(0, 16) : "COMPUTING"}...
               </div>
             </div>
           </div>
@@ -282,15 +284,15 @@ export function B2BInvoiceA4({
           {/* Totals */}
           <div className="w-full sm:w-64 space-y-2 text-xs">
             <div className="flex justify-between text-slate-600">
-              <span>Subtotal (المجموع الفرعي):</span>
+              <span>{t("b2bInvoice.subtotal", "Subtotal (المجموع الفرعي):")}</span>
               <span className="font-mono font-semibold">${subtotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-slate-600">
-              <span>VAT / Tax (15%):</span>
+              <span>{t("b2bInvoice.vatTax", "VAT / Tax (15%):")}</span>
               <span className="font-mono font-semibold">${taxAmount.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-sm font-black text-slate-900 border-t-2 border-slate-900 pt-2">
-              <span>Total Due (الإجمالي):</span>
+              <span>{t("b2bInvoice.totalDue", "Total Due (الإجمالي):")}</span>
               <span className="font-mono text-base text-amber-700">${totalAmount.toFixed(2)}</span>
             </div>
           </div>
@@ -298,8 +300,8 @@ export function B2BInvoiceA4({
 
         {/* Footer */}
         <div className="text-center text-[10px] text-slate-500 pt-8 mt-8 border-t border-slate-200">
-          <div>This is a computer-generated tax invoice verified under immutable cryptographic chaining.</div>
-          <div>Orqiva Enterprise Monolith • SOC-2 Type II Certified</div>
+          <div>{t("b2bInvoice.footerDisclaimer", "This is a computer-generated tax invoice verified under immutable cryptographic chaining.")}</div>
+          <div>{t("b2bInvoice.footerCertified", "Orqiva Enterprise Monolith • SOC-2 Type II Certified")}</div>
         </div>
       </div>
     </div>

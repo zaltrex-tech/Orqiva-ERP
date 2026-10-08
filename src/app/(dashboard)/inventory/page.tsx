@@ -141,8 +141,8 @@ export default function InventoryPage() {
                       <div className="text-[10px] text-slate-400">{locale === "ar" && item.categoryAr ? item.categoryAr : item.category}</div>
                     </td>
                     <td className="py-3.5 text-slate-300 font-mono text-start">{item.location}</td>
-                    <td className="py-3.5 text-slate-300 font-mono text-start">${item.costPrice.toFixed(2)}</td>
-                    <td className="py-3.5 text-slate-100 font-mono font-medium text-start">${item.sellingPrice.toFixed(2)}</td>
+                    <td className="py-3.5 text-slate-300 font-mono text-start">${Number(item.costPrice || 0).toFixed(2)}</td>
+                    <td className="py-3.5 text-slate-100 font-mono font-medium text-start">${Number(item.sellingPrice || 0).toFixed(2)}</td>
                     <td className="py-3.5 text-center font-mono font-bold text-slate-100">
                       {item.onHand} {t("common.units", "units")}
                     </td>

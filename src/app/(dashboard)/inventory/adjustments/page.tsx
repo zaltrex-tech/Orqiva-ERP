@@ -107,8 +107,9 @@ export default function StockAdjustmentsPage() {
           items: [{ productId: defaultProd?.id || "", countedQuantity: defaultSysQty }],
         }));
       }
-    } catch (e: any) {
-      toast.error(e.message || "Failed to load stock adjustments");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(msg || "Failed to load stock adjustments");
     } finally {
       setLoading(false);
     }
@@ -141,7 +142,7 @@ export default function StockAdjustmentsPage() {
 
   const getProductCost = (productId: string) => {
     const p = products.find((prod) => prod.id === productId);
-    return p ? p.costPrice : 0;
+    return p ? Number(p.costPrice || 0) : 0;
   };
 
   const handleAddItemRow = () => {
@@ -236,8 +237,9 @@ export default function StockAdjustmentsPage() {
       );
       setShowModal(false);
       fetchData();
-    } catch (e: any) {
-      toast.error(e.message || "Failed to post adjustment");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(msg || "Failed to post adjustment");
     } finally {
       setSubmitting(false);
     }
@@ -317,6 +319,7 @@ export default function StockAdjustmentsPage() {
               <span className="hidden sm:inline">{locale === "ar" ? "تحديث" : "Refresh"}</span>
             </Button>
             <Button
+              id="new-adjustment-btn"
               onClick={handleOpenModal}
               className="gap-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-medium shadow-lg shadow-amber-950/40"
             >
@@ -683,7 +686,7 @@ export default function StockAdjustmentsPage() {
                                 >
                                   {products.map((p) => (
                                     <option key={p.id} value={p.id}>
-                                      {p.name} ({p.sku}) - {p.costPrice.toFixed(2)} SAR
+                                      {p.name} ({p.sku}) - {Number(p.costPrice || 0).toFixed(2)} SAR
                                     </option>
                                   ))}
                                 </select>

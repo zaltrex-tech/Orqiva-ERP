@@ -134,8 +134,9 @@ export class PosService {
         qrDataUrl: invoiceResult.success ? invoiceResult.value.qrDataUrl : undefined,
         invoiceHash: invoiceResult.success ? invoiceResult.value.invoiceHash : undefined,
       });
-    } catch (error: any) {
-      return err(error.message || "Failed to process POS checkout transaction.");
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      return err(msg || "Failed to process POS checkout transaction.");
     }
   }
 }

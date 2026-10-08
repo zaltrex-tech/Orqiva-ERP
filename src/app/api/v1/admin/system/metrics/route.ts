@@ -41,9 +41,10 @@ export async function GET(req: NextRequest) {
       success: true,
       data: metrics,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to retrieve system metrics" },
+      { success: false, error: errorMsg || "Failed to retrieve system metrics" },
       { status: 500 }
     );
   }
@@ -106,9 +107,10 @@ export async function POST(req: NextRequest) {
       { success: false, error: "Unsupported action" },
       { status: 400 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { success: false, error: error.message || "Action processing failed" },
+      { success: false, error: errorMsg || "Action processing failed" },
       { status: 500 }
     );
   }

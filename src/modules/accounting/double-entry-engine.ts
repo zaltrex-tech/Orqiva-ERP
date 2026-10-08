@@ -97,8 +97,9 @@ export class DoubleEntryEngine {
       });
 
       return ok({ entryId: entry.id });
-    } catch (error: any) {
-      return err(`Failed to commit journal entry: ${error.message}`);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      return err(`Failed to commit journal entry: ${msg}`);
     }
   }
 }

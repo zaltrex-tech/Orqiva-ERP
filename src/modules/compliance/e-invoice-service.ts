@@ -257,8 +257,9 @@ export class EInvoiceService {
         previousHash,
         issueDate: issueDate.toISOString(),
       });
-    } catch (e: any) {
-      return err(`Failed to generate compliant e-invoice: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return err(`Failed to generate compliant e-invoice: ${msg}`);
     }
   }
 

@@ -52,9 +52,10 @@ export async function POST(req: NextRequest) {
       data: result.value,
       message: "Stock transfer verified and committed under row lock.",
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMsg },
       { status: 500 }
     );
   }

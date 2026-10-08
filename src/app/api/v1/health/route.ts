@@ -15,11 +15,12 @@ export async function GET() {
         auditLedger: "Immutable SOC-2 Enforced",
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
       {
         status: "degraded",
-        error: error.message,
+        error: errorMsg,
       },
       { status: 500 }
     );

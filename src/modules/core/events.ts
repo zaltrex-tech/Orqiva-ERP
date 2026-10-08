@@ -4,7 +4,7 @@ export type DomainEventType =
   | "LEDGER_ENTRY_POSTED"
   | "PAYROLL_EXECUTED";
 
-export interface DomainEvent<T = any> {
+export interface DomainEvent<T = unknown> {
   id: string;
   type: DomainEventType;
   tenantId: string;
@@ -12,21 +12,22 @@ export interface DomainEvent<T = any> {
   payload: T;
 }
 
-type EventHandler<T = any> = (event: DomainEvent<T>) => Promise<void> | void;
+type EventHandler<T = unknown> = (event: DomainEvent<T>) => Promise<void> | void;
 
 class DomainEventBus {
-  private handlers = new Map<DomainEventType, EventHandler[]>();
+  private handlers = new Map<DomainEventType, EventHandler<unknown>[]>();
 
   subscribe<T>(type: DomainEventType, handler: EventHandler<T>): void {
     const current = this.handlers.get(type) || [];
-    this.handlers.set(type, [...current, handler]);
+    const wrapped: EventHandler<unknown> = (event) => handler(event as unknown as DomainEvent<T>);
+    this.handlers.set(type, [...current, wrapped]);
   }
 
   async publish<T>(event: DomainEvent<T>): Promise<void> {
     const current = this.handlers.get(event.type) || [];
     for (const handler of current) {
       try {
-        await handler(event);
+        await handler(event as unknown as DomainEvent<unknown>);
       } catch (error) {
         console.error(`[EventBus Error on ${event.type}]:`, error);
       }

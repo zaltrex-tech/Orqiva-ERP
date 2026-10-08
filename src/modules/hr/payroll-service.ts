@@ -63,8 +63,9 @@ export class PayrollService {
         totalNetPay: Math.round(totalNet * 100) / 100,
         processedCount: activeEmployees.length,
       });
-    } catch (error: any) {
-      return err(error.message || "Failed to execute payroll calculation.");
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      return err(msg || "Failed to execute payroll calculation.");
     }
   }
 }

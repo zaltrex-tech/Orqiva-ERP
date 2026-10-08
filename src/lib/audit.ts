@@ -1,5 +1,5 @@
 import { prisma } from "./db";
-import { AuditAction } from "@prisma/client";
+import { AuditAction, Prisma } from "@prisma/client";
 
 export interface CreateAuditLogParams {
   tenantId: string;
@@ -29,9 +29,9 @@ export async function recordAuditEvent(params: CreateAuditLogParams): Promise<vo
         entityId: params.entityId,
         ipAddress: params.ipAddress,
         userAgent: params.userAgent,
-        beforeState: params.beforeState ? (params.beforeState as any) : undefined,
-        afterState: params.afterState ? (params.afterState as any) : undefined,
-        metadata: params.metadata ? (params.metadata as any) : undefined,
+        beforeState: params.beforeState ? (params.beforeState as Prisma.InputJsonValue) : undefined,
+        afterState: params.afterState ? (params.afterState as Prisma.InputJsonValue) : undefined,
+        metadata: params.metadata ? (params.metadata as Prisma.InputJsonValue) : undefined,
       },
     });
   } catch (err) {

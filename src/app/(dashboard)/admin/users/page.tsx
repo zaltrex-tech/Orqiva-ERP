@@ -21,7 +21,7 @@ import {
   Lock,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { useI18n } from "@/lib/i18n/context";
@@ -98,10 +98,10 @@ export default function AdminUsersPage() {
         setBranches(json.data.branches || []);
         setStats(json.data.stats || { totalUsers: 0, superAdmins: 0, cashiers: 0, branchesCount: 0 });
       } else {
-        toast.error(json.error || "Failed to load user records");
+        toast.error(json.error || t("users.loadError", "Failed to load user records"));
       }
     } catch {
-      toast.error("Network error while connecting to user directory");
+      toast.error(t("users.networkConnectError", "Network error while connecting to user directory"));
     } finally {
       setLoading(false);
     }
@@ -211,16 +211,16 @@ export default function AdminUsersPage() {
         setNewPassword("");
         setSelectedUser(null);
       } else {
-        toast.error(data.error || "Failed to reset password");
+        toast.error(data.error || t("users.resetPasswordError", "Failed to reset password"));
       }
     } catch {
-      toast.error("Network error while resetting password");
+      toast.error(t("users.resetPasswordError", "Network error while resetting password"));
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const getRoleBadgeVariant = (role: string) => {
+  const getRoleBadgeVariant = (role: string): BadgeProps["variant"] => {
     switch (role) {
       case "SUPER_ADMIN":
         return "amber";
@@ -282,7 +282,7 @@ export default function AdminUsersPage() {
               className="gap-2"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-              <span className="hidden sm:inline">Refresh</span>
+              <span className="hidden sm:inline">{t("common.refresh", "Refresh")}</span>
             </Button>
             <Button
               id="add-user-btn"
@@ -412,7 +412,7 @@ export default function AdminUsersPage() {
                 ) : filteredUsers.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="text-center py-12 text-slate-400">
-                      No users found matching current filters.
+                      {t("users.empty", "No users found matching current filters.")}
                     </td>
                   </tr>
                 ) : (
@@ -439,7 +439,7 @@ export default function AdminUsersPage() {
                       {/* Role Badge */}
                       <td className="py-3.5 px-4">
                         <Badge
-                          variant={getRoleBadgeVariant(user.role) as any}
+                          variant={getRoleBadgeVariant(user.role)}
                           className="font-mono text-[10px] tracking-wider"
                         >
                           {getRoleLabel(user.role)}
@@ -550,7 +550,7 @@ export default function AdminUsersPage() {
                     required
                     value={formData.fullName}
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                    placeholder="e.g. Tariq Al-Mansoor"
+                    placeholder={t("users.fullNamePlaceholder", "e.g. Tariq Al-Mansoor")}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-amber-500"
                   />
                 </div>
@@ -564,7 +564,7 @@ export default function AdminUsersPage() {
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="user@orqiva.io"
+                    placeholder={t("users.emailPlaceholder", "user@orqiva.io")}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-amber-500"
                   />
                 </div>
@@ -578,7 +578,7 @@ export default function AdminUsersPage() {
                     required
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    placeholder="Min. 6 characters"
+                    placeholder={t("users.passwordPlaceholder", "Min. 6 characters")}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-amber-500"
                   />
                 </div>
@@ -610,7 +610,7 @@ export default function AdminUsersPage() {
                     onChange={(e) => setFormData({ ...formData, branchId: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-amber-500"
                   >
-                    <option value="">Default Flagship Branch</option>
+                    <option value="">{t("users.defaultBranch", "Default Flagship Branch")}</option>
                     {branches.map((b) => (
                       <option key={b.id} value={b.id}>
                         {b.name} ({b.code})
@@ -673,7 +673,7 @@ export default function AdminUsersPage() {
                     required
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Enter new secure password (min. 6 chars)"
+                    placeholder={t("users.resetPasswordPlaceholder", "Enter new secure password (min. 6 chars)")}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-amber-500"
                   />
                 </div>

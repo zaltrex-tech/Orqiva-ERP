@@ -35,9 +35,10 @@ export async function POST(req: NextRequest) {
       data: result.value,
       message: "Monthly payroll calculated and recorded in audit log.",
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMsg },
       { status: 500 }
     );
   }

@@ -3,6 +3,13 @@ import { recordAuditEvent } from "@/lib/audit";
 import { Result, ok, err } from "../core/result";
 import { StockMoveState, AuditAction } from "@prisma/client";
 
+interface QuantRow {
+  id: string;
+  quantity: number | string;
+  reservedQuantity: number | string;
+  version?: number;
+}
+
 export interface TransferStockItem {
   productId: string;
   quantity: number;
@@ -65,7 +72,7 @@ export class StockService {
 
             // Find or lock the source quant
             // PostgreSQL pessimistic lock prevents parallel deductions on the same shelf
-            const sourceQuants: any[] = await tx.$queryRaw`
+            const sourceQuants: QuantRow[] = await tx.$queryRaw`
               SELECT id, quantity, "reservedQuantity", version 
               FROM stock_quants 
               WHERE "tenantId" = ${tenantId} 
@@ -160,8 +167,9 @@ export class StockService {
       });
 
       return ok({ moveId: result.id });
-    } catch (error: any) {
-      return err(error.message || "Failed to complete concurrent stock transfer.");
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      return err(msg || "Failed to complete concurrent stock transfer.");
     }
   }
 }

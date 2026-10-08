@@ -8,6 +8,12 @@ export interface CreateTransferItemInput {
   quantity: number;
 }
 
+interface QuantRow {
+  id: string;
+  quantity: number | string;
+  reservedQuantity?: number | string;
+}
+
 export interface CreateTransferInput {
   tenantId: string;
   actorId: string;
@@ -75,8 +81,9 @@ export class TransferService {
       });
 
       return ok({ transferId: transfer.id });
-    } catch (e: any) {
-      return err(`Failed to create transfer: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return err(`Failed to create transfer: ${msg}`);
     }
   }
 
@@ -103,7 +110,7 @@ export class TransferService {
         for (const line of transfer.lines) {
           const qtyNeeded = Number(line.quantity);
 
-          const quants: any[] = await tx.$queryRaw`
+          const quants: QuantRow[] = await tx.$queryRaw`
             SELECT id, quantity, "reservedQuantity"
             FROM stock_quants
             WHERE "tenantId" = ${tenantId}
@@ -113,7 +120,7 @@ export class TransferService {
           `;
 
           const quant = quants[0];
-          const availableQty = quant ? Number(quant.quantity) - Number(quant.reservedQuantity) : 0;
+          const availableQty = quant ? Number(quant.quantity) - Number(quant.reservedQuantity ?? 0) : 0;
 
           if (availableQty < qtyNeeded) {
             throw new Error(
@@ -151,8 +158,9 @@ export class TransferService {
       });
 
       return ok({ status: "IN_TRANSIT" });
-    } catch (e: any) {
-      return err(e.message || "Failed to dispatch stock transfer.");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return err(msg || "Failed to dispatch stock transfer.");
     }
   }
 
@@ -180,7 +188,7 @@ export class TransferService {
           const receivedQty = overrideItem ? overrideItem.quantity : Number(line.quantity);
 
           // Update destination stock quant under row-lock
-          const destQuants: any[] = await tx.$queryRaw`
+          const destQuants: QuantRow[] = await tx.$queryRaw`
             SELECT id, quantity
             FROM stock_quants
             WHERE "tenantId" = ${tenantId}
@@ -239,8 +247,9 @@ export class TransferService {
       });
 
       return ok({ status: "COMPLETED" });
-    } catch (e: any) {
-      return err(e.message || "Failed to receive stock transfer.");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return err(msg || "Failed to receive stock transfer.");
     }
   }
 }

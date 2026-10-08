@@ -73,7 +73,7 @@ export class FinancialReportsEngine {
   }): Promise<TrialBalanceReport> {
     const { tenantId, startDate, endDate } = params;
 
-    const dateFilter: any = {};
+    const dateFilter: { gte?: Date; lte?: Date } = {};
     if (startDate) dateFilter.gte = startDate;
     if (endDate) dateFilter.lte = endDate;
 
@@ -150,7 +150,7 @@ export class FinancialReportsEngine {
   }): Promise<ProfitAndLossReport> {
     const { tenantId, startDate, endDate } = params;
 
-    const dateFilter: any = {};
+    const dateFilter: { gte?: Date; lte?: Date } = {};
     if (startDate) dateFilter.gte = startDate;
     if (endDate) dateFilter.lte = endDate;
 
@@ -241,7 +241,7 @@ export class FinancialReportsEngine {
   }): Promise<BalanceSheetReport> {
     const { tenantId, asOfDate } = params;
 
-    const dateFilter: any = {};
+    const dateFilter: { lte?: Date } = {};
     if (asOfDate) dateFilter.lte = asOfDate;
 
     // Fetch balance sheet accounts

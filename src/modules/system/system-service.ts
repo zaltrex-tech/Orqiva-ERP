@@ -288,7 +288,8 @@ export class SystemService {
         databaseSizeFormatted,
         serverVersion,
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
       return {
         status: "DEGRADED",
         latencyMs: null,
@@ -300,7 +301,7 @@ export class SystemService {
         databaseSizeBytes: 0,
         databaseSizeFormatted: "N/A",
         serverVersion: "PostgreSQL",
-        error: err.message || "PostgreSQL connection error",
+        error: msg || "PostgreSQL connection error",
       };
     }
   }
@@ -409,9 +410,10 @@ export class SystemService {
           failedJobs,
         };
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
       redisMetrics.status = "DISCONNECTED";
-      redisMetrics.error = err.message || "Failed to reach Redis daemon";
+      redisMetrics.error = msg || "Failed to reach Redis daemon";
       queueMetrics.status = "OFFLINE";
     }
 
@@ -528,11 +530,12 @@ export class SystemService {
         retriedCount: count,
         message: `Successfully retried ${count} failed background job(s).`,
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
       return {
         success: false,
         retriedCount: 0,
-        message: err.message || "Failed to retry jobs",
+        message: msg || "Failed to retry jobs",
       };
     }
   }
@@ -614,13 +617,14 @@ export class SystemService {
         timestamp,
         message: "Automated database backup triggered and verified successfully.",
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
       return {
         success: false,
         fileName: "",
         sizeFormatted: "0 B",
         timestamp,
-        message: err.message || "Backup execution failed",
+        message: msg || "Backup execution failed",
       };
     }
   }

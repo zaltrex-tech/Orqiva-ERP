@@ -21,7 +21,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { useI18n } from "@/lib/i18n/context";
@@ -122,7 +122,7 @@ export default function PurchasesPage() {
         }
       }
     } catch {
-      toast.error("Failed to load procurement records");
+      toast.error(t("purchases.loadError", "Failed to load procurement records"));
     } finally {
       setLoading(false);
     }
@@ -135,7 +135,7 @@ export default function PurchasesPage() {
   const handleCreateVendor = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!vendorForm.name || !vendorForm.code) {
-      toast.error("Name and Code are required.");
+      toast.error(t("purchases.nameCodeRequired", "Name and Code are required."));
       return;
     }
 
@@ -156,7 +156,7 @@ export default function PurchasesPage() {
         toast.error(data.error || "Failed to create vendor");
       }
     } catch {
-      toast.error("Network error while creating vendor");
+      toast.error(t("purchases.vendorNetworkError", "Network error while creating vendor"));
     } finally {
       setSubmitting(false);
     }
@@ -165,7 +165,7 @@ export default function PurchasesPage() {
   const handleCreatePO = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!poForm.vendorId || poForm.items.length === 0 || !poForm.items[0].productId) {
-      toast.error("Please select a vendor and at least one product.");
+      toast.error(t("purchases.selectVendorProductWarning", "Please select a vendor and at least one product."));
       return;
     }
 
@@ -194,7 +194,7 @@ export default function PurchasesPage() {
         toast.error(data.error || "Failed to create purchase order");
       }
     } catch {
-      toast.error("Network error while creating purchase order");
+      toast.error(t("purchases.poNetworkError", "Network error while creating purchase order"));
     } finally {
       setSubmitting(false);
     }
@@ -227,7 +227,7 @@ export default function PurchasesPage() {
         toast.error(data.error || "Failed to process goods receipt");
       }
     } catch {
-      toast.error("Network error while receiving goods");
+      toast.error(t("purchases.receiveNetworkError", "Network error while receiving goods"));
     }
   };
 
@@ -250,11 +250,11 @@ export default function PurchasesPage() {
         toast.error(data.error || "Failed to post vendor bill");
       }
     } catch {
-      toast.error("Network error while posting vendor bill");
+      toast.error(t("purchases.billNetworkError", "Network error while posting vendor bill"));
     }
   };
 
-  const getStatusBadgeVariant = (status: string) => {
+  const getStatusBadgeVariant = (status: string): BadgeProps["variant"] => {
     switch (status) {
       case "CONFIRMED":
         return "amber";
@@ -298,7 +298,7 @@ export default function PurchasesPage() {
               className="gap-2"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-              <span className="hidden sm:inline">Refresh</span>
+              <span className="hidden sm:inline">{t("common.refresh", "Refresh")}</span>
             </Button>
             <Button
               id="new-vendor-btn"
@@ -359,7 +359,7 @@ export default function PurchasesPage() {
                     <th className="py-3.5 px-4 text-start">{t("purchases.warehouse", "Depot")}</th>
                     <th className="py-3.5 px-4 text-start">{t("purchases.orderStatus", "Status")}</th>
                     <th className="py-3.5 px-4 text-end">{t("purchases.totalAmount", "Total Amount")}</th>
-                    <th className="py-3.5 px-5 text-end">Actions (3-Way Cycle)</th>
+                    <th className="py-3.5 px-5 text-end">{t("purchases.actionsHeader", "Actions (3-Way Cycle)")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
@@ -367,13 +367,13 @@ export default function PurchasesPage() {
                     <tr>
                       <td colSpan={6} className="text-center py-12 text-slate-400">
                         <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-amber-400" />
-                        Loading orders...
+                        {t("common.loading", "Loading orders...")}
                       </td>
                     </tr>
                   ) : orders.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="text-center py-12 text-slate-400">
-                        No purchase orders recorded yet. Click "Create Purchase Order" above.
+                        {t("purchases.noOrders", "No purchase orders recorded yet. Click \"Create Purchase Order\" above.")}
                       </td>
                     </tr>
                   ) : (
@@ -391,7 +391,7 @@ export default function PurchasesPage() {
                         </td>
                         <td className="py-3.5 px-4 text-start">
                           <Badge
-                            variant={getStatusBadgeVariant(po.status) as any}
+                            variant={getStatusBadgeVariant(po.status)}
                             className="font-mono text-[10px]"
                           >
                             {po.status}
@@ -453,7 +453,7 @@ export default function PurchasesPage() {
                     <th className="py-3.5 px-5 text-start">{t("purchases.vendorName", "Supplier")}</th>
                     <th className="py-3.5 px-4 text-start">{t("purchases.vendorCode", "Code")}</th>
                     <th className="py-3.5 px-4 text-start">{t("purchases.taxId", "VAT / Tax ID")}</th>
-                    <th className="py-3.5 px-4 text-start">Payment Terms</th>
+                    <th className="py-3.5 px-4 text-start">{t("purchases.paymentTermsHeader", "Payment Terms")}</th>
                     <th className="py-3.5 px-5 text-end">{t("purchases.balance", "Outstanding AP Balance")}</th>
                   </tr>
                 </thead>
@@ -493,7 +493,7 @@ export default function PurchasesPage() {
                   <h3 className="text-base font-bold text-white font-heading">
                     {t("purchases.createVendorTitle", "Register New Supplier")}
                   </h3>
-                  <p className="text-xs text-slate-400">Add an approved vendor to the supply directory.</p>
+                  <p className="text-xs text-slate-400">{t("purchases.vendorDirectoryDesc", "Add an approved vendor to the supply directory.")}</p>
                 </div>
                 <button
                   onClick={() => setShowVendorModal(false)}
@@ -505,48 +505,48 @@ export default function PurchasesPage() {
 
               <form onSubmit={handleCreateVendor} className="p-5 space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Supplier Name *</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">{t("purchases.vendorName", "Supplier Name")} *</label>
                   <input
                     type="text"
                     required
                     value={vendorForm.name}
                     onChange={(e) => setVendorForm({ ...vendorForm, name: e.target.value })}
-                    placeholder="e.g. Al-Futtaim Supply Corp"
+                    placeholder={t("purchases.vendorNamePlaceholder", "e.g. Al-Futtaim Supply Corp")}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Code / Symbol *</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">{t("purchases.vendorCode", "Code / Symbol")} *</label>
                   <input
                     type="text"
                     required
                     value={vendorForm.code}
                     onChange={(e) => setVendorForm({ ...vendorForm, code: e.target.value })}
-                    placeholder="e.g. VEN-004"
+                    placeholder={t("purchases.vendorCodePlaceholder", "e.g. VEN-004")}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">VAT / Tax ID</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">{t("purchases.taxId", "VAT / Tax ID")}</label>
                   <input
                     type="text"
                     value={vendorForm.taxId}
                     onChange={(e) => setVendorForm({ ...vendorForm, taxId: e.target.value })}
-                    placeholder="e.g. 300492817200003"
+                    placeholder={t("purchases.vendorTaxIdPlaceholder", "e.g. 300492817200003")}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Payment Terms</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">{t("purchases.paymentTermsHeader", "Payment Terms")}</label>
                   <select
                     value={vendorForm.paymentTerms}
                     onChange={(e) => setVendorForm({ ...vendorForm, paymentTerms: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200"
                   >
-                    <option value="DUE_ON_RECEIPT">Due on Receipt</option>
-                    <option value="NET15">NET 15 Days</option>
-                    <option value="NET30">NET 30 Days</option>
-                    <option value="NET60">NET 60 Days</option>
+                    <option value="DUE_ON_RECEIPT">{t("purchases.dueOnReceipt", "Due on Receipt")}</option>
+                    <option value="NET15">{t("purchases.net15", "NET 15 Days")}</option>
+                    <option value="NET30">{t("purchases.net30", "NET 30 Days")}</option>
+                    <option value="NET60">{t("purchases.net60", "NET 60 Days")}</option>
                   </select>
                 </div>
 
@@ -555,7 +555,7 @@ export default function PurchasesPage() {
                     {t("common.cancel", "Cancel")}
                   </Button>
                   <Button type="submit" variant="primary" size="md" disabled={submitting}>
-                    {submitting ? "Saving..." : "Register Vendor"}
+                    {submitting ? t("purchases.saving", "Saving...") : t("purchases.registerVendor", "Register Vendor")}
                   </Button>
                 </div>
               </form>
@@ -572,7 +572,7 @@ export default function PurchasesPage() {
                   <h3 className="text-base font-bold text-white font-heading">
                     {t("purchases.createPOTitle", "Create Purchase Order")}
                   </h3>
-                  <p className="text-xs text-slate-400">Authorize formal replenishment from registered vendor.</p>
+                  <p className="text-xs text-slate-400">{t("purchases.createPoDesc", "Authorize formal replenishment from registered vendor.")}</p>
                 </div>
                 <button
                   onClick={() => setShowPOModal(false)}
@@ -585,14 +585,14 @@ export default function PurchasesPage() {
               <form onSubmit={handleCreatePO} className="p-5 space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">Supplier *</label>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">{t("purchases.vendorName", "Supplier")} *</label>
                     <select
                       required
                       value={poForm.vendorId}
                       onChange={(e) => setPoForm({ ...poForm, vendorId: e.target.value })}
                       className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200"
                     >
-                      <option value="">Select Supplier...</option>
+                      <option value="">{t("purchases.selectSupplierPlaceholder", "Select Supplier...")}</option>
                       {vendors.map((v) => (
                         <option key={v.id} value={v.id}>
                           {v.name} ({v.code})
@@ -601,7 +601,7 @@ export default function PurchasesPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">PO Number</label>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">{t("purchases.orderNumber", "PO Number")}</label>
                     <input
                       type="text"
                       readOnly
@@ -612,7 +612,7 @@ export default function PurchasesPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Product SKU *</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">{t("purchases.productSku", "Product SKU")} *</label>
                   <select
                     required
                     value={poForm.items[0]?.productId || ""}
@@ -633,7 +633,7 @@ export default function PurchasesPage() {
                     }}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200"
                   >
-                    <option value="">Select Product...</option>
+                    <option value="">{t("purchases.selectProductPlaceholder", "Select Product...")}</option>
                     {products.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.name} ({p.sku})
@@ -644,7 +644,7 @@ export default function PurchasesPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">Quantity</label>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">{t("purchases.quantityLabel", "Quantity")}</label>
                     <input
                       type="number"
                       min="1"
@@ -660,7 +660,7 @@ export default function PurchasesPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">Unit Cost ($)</label>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">{t("purchases.unitCost", "Unit Cost ($)")}</label>
                     <input
                       type="number"
                       step="0.01"
@@ -679,7 +679,7 @@ export default function PurchasesPage() {
                 </div>
 
                 <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 flex justify-between text-xs">
-                  <span className="text-slate-400">Total with 15% VAT:</span>
+                  <span className="text-slate-400">{t("purchases.totalWithVat", "Total with 15% VAT:")}</span>
                   <span className="font-mono font-bold text-amber-400">
                     $
                     {(
@@ -695,7 +695,7 @@ export default function PurchasesPage() {
                     {t("common.cancel", "Cancel")}
                   </Button>
                   <Button type="submit" variant="primary" size="md" disabled={submitting}>
-                    {submitting ? "Issuing..." : "Confirm & Send PO"}
+                    {submitting ? t("purchases.issuing", "Issuing...") : t("purchases.confirmSendPo", "Confirm & Send PO")}
                   </Button>
                 </div>
               </form>

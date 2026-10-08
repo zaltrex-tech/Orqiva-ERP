@@ -63,8 +63,9 @@ export default function FinancialReportsPage() {
       } else if (activeTab === "balance-sheet") {
         setBalanceSheetData(json.data);
       }
-    } catch (err: any) {
-      toast.error(err.message || "Failed to load report data");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(msg || t("reports.loadError", "Failed to load report data"));
     } finally {
       setLoading(false);
     }
@@ -96,9 +97,10 @@ export default function FinancialReportsPage() {
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-      toast.success("Financial statement exported to CSV successfully");
-    } catch (err: any) {
-      toast.error(err.message || "Export error");
+      toast.success(t("reports.exportSuccess", "Financial statement exported to CSV successfully"));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(msg || t("reports.exportError", "Export error"));
     } finally {
       setIsExporting(false);
     }
@@ -148,7 +150,7 @@ export default function FinancialReportsPage() {
                 {t("accounting.title", "General Ledger")}
               </Badge>
               <span className="text-muted-foreground text-xs">•</span>
-              <span className="text-muted-foreground text-xs font-mono">IFRS / SOC2 Compliant</span>
+              <span className="text-muted-foreground text-xs font-mono">{t("reports.complianceBadge", "IFRS / SOC2 Compliant")}</span>
             </div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
               <FileSpreadsheet className="h-7 w-7 text-amber-500" />
@@ -193,7 +195,7 @@ export default function FinancialReportsPage() {
 
         {/* Print Letterhead Header (Only displayed when printing) */}
         <div className="hidden print-only text-center border-b pb-4 mb-4">
-          <h1 className="text-2xl font-bold text-black tracking-tight">ORQIVA ENTERPRISE ERP</h1>
+          <h1 className="text-2xl font-bold text-black tracking-tight">{t("reports.brandEnterprise", "ORQIVA ENTERPRISE ERP")}</h1>
           <p className="text-sm text-gray-600 font-mono">FINANCIAL AUDIT STATEMENT • IFRS & DOUBLE-ENTRY VERIFIED</p>
           <p className="text-xs text-gray-500 mt-1">
             Generated: {new Date().toLocaleString()} • Tenant: ORQ-MAIN
@@ -248,7 +250,7 @@ export default function FinancialReportsPage() {
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 className="bg-transparent text-foreground text-xs focus:outline-none"
-                placeholder="Start Date"
+                placeholder={t("reports.startDatePlaceholder", "Start Date")}
                 title="Start Date"
               />
               <span className="text-muted-foreground">—</span>
@@ -257,7 +259,7 @@ export default function FinancialReportsPage() {
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 className="bg-transparent text-foreground text-xs focus:outline-none"
-                placeholder="End Date"
+                placeholder={t("reports.endDatePlaceholder", "End Date")}
                 title="End Date"
               />
             </div>
@@ -363,8 +365,8 @@ export default function FinancialReportsPage() {
                       <th className="py-3 px-4 text-start">{t("reports.type", "Category")}</th>
                       <th className="py-3 px-4 text-end">{t("reports.debit", "Debit")}</th>
                       <th className="py-3 px-4 text-end">{t("reports.credit", "Credit")}</th>
-                      <th className="py-3 px-4 text-end">Net Debit</th>
-                      <th className="py-3 px-4 text-end">Net Credit</th>
+                      <th className="py-3 px-4 text-end">{t("reports.netDebit", "Net Debit")}</th>
+                      <th className="py-3 px-4 text-end">{t("reports.netCredit", "Net Credit")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/20">
@@ -494,7 +496,7 @@ export default function FinancialReportsPage() {
                     </span>
                   </div>
                   {pnlData?.operatingRevenue.length === 0 ? (
-                    <p className="text-xs text-muted-foreground italic ps-4">No revenue entries recorded.</p>
+                    <p className="text-xs text-muted-foreground italic ps-4">{t("reports.noRevenue", "No revenue entries recorded.")}</p>
                   ) : (
                     pnlData?.operatingRevenue.map((item) => (
                       <div key={item.code} className="flex items-center justify-between text-xs ps-4 py-1 text-muted-foreground">
@@ -518,7 +520,7 @@ export default function FinancialReportsPage() {
                     </span>
                   </div>
                   {pnlData?.costOfGoodsSold.length === 0 ? (
-                    <p className="text-xs text-muted-foreground italic ps-4">No cost of goods sold recorded.</p>
+                    <p className="text-xs text-muted-foreground italic ps-4">{t("reports.noCogs", "No cost of goods sold recorded.")}</p>
                   ) : (
                     pnlData?.costOfGoodsSold.map((item) => (
                       <div key={item.code} className="flex items-center justify-between text-xs ps-4 py-1 text-muted-foreground">
@@ -550,7 +552,7 @@ export default function FinancialReportsPage() {
                     </span>
                   </div>
                   {pnlData?.operatingExpenses.length === 0 ? (
-                    <p className="text-xs text-muted-foreground italic ps-4">No operating expenses recorded.</p>
+                    <p className="text-xs text-muted-foreground italic ps-4">{t("reports.noOpex", "No operating expenses recorded.")}</p>
                   ) : (
                     pnlData?.operatingExpenses.map((item) => (
                       <div key={item.code} className="flex items-center justify-between text-xs ps-4 py-1 text-muted-foreground">
@@ -662,7 +664,7 @@ export default function FinancialReportsPage() {
                     Non-Current Assets (الأصول غير المتداولة)
                   </span>
                   {balanceSheetData?.nonCurrentAssets.length === 0 ? (
-                    <p className="text-xs text-muted-foreground italic ps-3">None</p>
+                    <p className="text-xs text-muted-foreground italic ps-3">{t("reports.none", "None")}</p>
                   ) : (
                     balanceSheetData?.nonCurrentAssets.map((item) => (
                       <div key={item.code} className="flex items-center justify-between text-xs ps-3 py-1">
@@ -727,7 +729,7 @@ export default function FinancialReportsPage() {
                     </div>
                   ))}
                   <div className="flex items-center justify-between text-xs ps-3 py-1 text-emerald-400">
-                    <span>Current Period Retained Earnings</span>
+                    <span>{t("reports.retainedEarnings", "Current Period Retained Earnings")}</span>
                     <span className="font-mono font-semibold">
                       ${balanceSheetData?.currentPeriodNetEarnings.toFixed(2) ?? "0.00"}
                     </span>

@@ -56,9 +56,10 @@ export async function POST(req: NextRequest) {
       data: result.value,
       message: "Journal entry posted. Accounting invariant strictly preserved.",
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMsg },
       { status: 500 }
     );
   }

@@ -104,7 +104,7 @@ export default function PosPage() {
   // Web Audio Hardware Beep Synthesizer
   const playScannerBeep = (type: "success" | "error" = "success") => {
     try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      const AudioCtx = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (!AudioCtx) return;
       const ctx = new AudioCtx();
       const osc = ctx.createOscillator();
@@ -359,10 +359,10 @@ export default function PosPage() {
       // Clear cart & refresh database stock quantities
       setCart([]);
       await loadPosData();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Network or execution failure during POS order:", err);
-      toast.error("Network Interruption", {
-        description: "Failed to communicate with the ERP transaction coordinator.",
+      toast.error(t("pos.networkErrorTitle", "Network Interruption"), {
+        description: t("pos.networkErrorDesc", "Failed to communicate with the ERP transaction coordinator."),
       });
     } finally {
       setIsProcessing(false);

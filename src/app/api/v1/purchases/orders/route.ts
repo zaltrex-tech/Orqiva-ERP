@@ -39,8 +39,9 @@ export async function GET() {
     });
 
     return NextResponse.json({ success: true, data: { orders } });
-  } catch (e: any) {
-    return NextResponse.json({ success: false, error: e.message }, { status: 500 });
+  } catch (e: unknown) {
+    const errorMsg = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ success: false, error: errorMsg }, { status: 500 });
   }
 }
 
@@ -65,7 +66,8 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ success: true, data: res.value });
-  } catch (e: any) {
-    return NextResponse.json({ success: false, error: e.message }, { status: 500 });
+  } catch (e: unknown) {
+    const errorMsg = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ success: false, error: errorMsg }, { status: 500 });
   }
 }
