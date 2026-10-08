@@ -3,7 +3,7 @@ import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: "amber" | "emerald" | "indigo" | "rose" | "slate";
+  variant?: "amber" | "emerald" | "indigo" | "rose" | "slate" | "outline";
 }
 
 export function Badge({ className, variant = "slate", children, ...props }: BadgeProps) {
@@ -13,6 +13,7 @@ export function Badge({ className, variant = "slate", children, ...props }: Badg
     indigo: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
     rose: "bg-rose-500/10 text-rose-400 border-rose-500/20",
     slate: "bg-slate-800 text-slate-300 border-slate-700",
+    outline: "bg-transparent text-slate-300 border-slate-700",
   };
 
   return (

@@ -19,6 +19,9 @@ import {
   Printer,
   RefreshCw,
   X,
+  Barcode,
+  ScanLine,
+  Volume2,
 } from "lucide-react";
 
 interface ProductItem {
@@ -83,8 +86,134 @@ export default function PosPage() {
     }
   };
 
+  const [manualBarcode, setManualBarcode] = useState("");
+
   useEffect(() => {
     loadPosData();
+  }, []);
+
+  const productsRef = React.useRef(products);
+  useEffect(() => {
+    productsRef.current = products;
+  }, [products]);
+
+  // Web Audio Hardware Beep Synthesizer
+  const playScannerBeep = (type: "success" | "error" = "success") => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      if (type === "success") {
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(1250, ctx.currentTime);
+        gain.gain.setValueAtTime(0.18, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.08);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.08);
+      } else {
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(320, ctx.currentTime);
+        gain.gain.setValueAtTime(0.22, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.2);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.2);
+      }
+    } catch {
+      // AudioContext unavailable in non-interactive/mock test environments
+    }
+  };
+
+  const processBarcodeScan = (barcode: string) => {
+    const trimmed = barcode.trim();
+    if (!trimmed) return;
+
+    const matched = productsRef.current.find(
+      (p) =>
+        p.sku.toLowerCase() === trimmed.toLowerCase() ||
+        p.id === trimmed ||
+        p.name.toLowerCase() === trimmed.toLowerCase()
+    );
+
+    if (matched) {
+      if (matched.stockAvailable <= 0) {
+        playScannerBeep("error");
+        toast.warning("Scanned Product Out of Stock", {
+          description: `Product ${matched.name} has zero available shelf quants.`,
+        });
+        return;
+      }
+      addToCart(matched);
+      playScannerBeep("success");
+      toast.success(`Scanned: ${matched.name}`, {
+        description: `SKU [${matched.sku}] automatically appended to POS register.`,
+        duration: 3000,
+      });
+    } else {
+      playScannerBeep("error");
+      toast.error(`Barcode Not Found: "${trimmed}"`, {
+        description: "SKU is not registered in the active inventory catalog.",
+        duration: 4000,
+      });
+    }
+  };
+
+  // Global Hardware Barcode Scanner Listener (<50ms burst detection)
+  useEffect(() => {
+    let buffer = "";
+    let lastCharTime = 0;
+    let intervals: number[] = [];
+
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      const isInputFocused =
+        activeEl &&
+        (activeEl.tagName === "INPUT" ||
+          activeEl.tagName === "TEXTAREA" ||
+          (activeEl as HTMLElement).isContentEditable);
+
+      const now = Date.now();
+      const interval = now - lastCharTime;
+      lastCharTime = now;
+
+      if (e.key === "Enter") {
+        const trimmed = buffer.trim();
+        const avgInterval =
+          intervals.length > 0 ? intervals.reduce((a, b) => a + b, 0) / intervals.length : 999;
+
+        // Scanners emit rapid bursts (typically < 60ms between characters)
+        const isRapidBurst = trimmed.length >= 2 && (avgInterval < 75 || !isInputFocused);
+
+        if (isRapidBurst) {
+          e.preventDefault();
+          e.stopPropagation();
+          processBarcodeScan(trimmed);
+        }
+
+        buffer = "";
+        intervals = [];
+        return;
+      }
+
+      if (e.key.length !== 1) return;
+
+      if (interval > 180) {
+        buffer = e.key;
+        intervals = [];
+      } else {
+        buffer += e.key;
+        intervals.push(interval);
+      }
+    };
+
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleGlobalKeyDown);
+    };
   }, []);
 
   const addToCart = (product: ProductItem) => {
@@ -258,6 +387,10 @@ export default function PosPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-[10px]">
+              <Barcode className="w-3.5 h-3.5" />
+              <span>SCANNER ACTIVE (&lt;50ms)</span>
+            </div>
             <Button variant="ghost" size="sm" onClick={loadPosData} className="gap-1.5 text-xs">
               <RefreshCw className="w-3.5 h-3.5" />
               Re-sync Catalog
@@ -272,12 +405,32 @@ export default function PosPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Catalog: 10 Seeded Products */}
           <div className="lg:col-span-2 space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
                 <ShoppingBag className="w-4 h-4 text-amber-400" />
                 Live Product Catalog ({products.length} SKUs)
               </h2>
-              <span className="text-xs text-slate-400 font-mono">Real-Time PostgreSQL Quants</span>
+
+              <div className="flex items-center gap-2">
+                <div className="relative flex items-center">
+                  <ScanLine className="w-3.5 h-3.5 absolute start-2.5 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Scan Barcode / SKU..."
+                    value={manualBarcode}
+                    onChange={(e) => setManualBarcode(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && manualBarcode.trim()) {
+                        e.preventDefault();
+                        processBarcodeScan(manualBarcode.trim());
+                        setManualBarcode("");
+                      }
+                    }}
+                    className="bg-slate-950/80 border border-slate-800 rounded-lg ps-8 pe-3 py-1.5 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-amber-500/60 w-52 font-mono"
+                    data-testid="barcode-input"
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">

@@ -49,6 +49,9 @@ model Tenant {
   accounts    Account[]
   employees   Employee[]
   auditLogs   AuditLog[]
+  vendors     Vendor[]
+  purchaseOrders PurchaseOrder[]
+  goodsReceipts  GoodsReceipt[]
 
   @@map("tenants")
 }
@@ -147,6 +150,7 @@ model Warehouse {
 
   tenant      Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   locations   Location[]
+  purchaseOrders PurchaseOrder[]
 
   @@unique([tenantId, code])
   @@index([tenantId, isActive])
@@ -170,6 +174,7 @@ model Location {
   quants      StockQuant[]
   incomingMoves StockMove[] @relation("StockMoveDestLocation")
   outgoingMoves StockMove[] @relation("StockMoveSrcLocation")
+  goodsReceipts GoodsReceipt[]
 
   @@index([warehouseId, type])
   @@index([tenantId, type])
@@ -217,6 +222,8 @@ model Product {
   quants        StockQuant[]
   stockMoveLines StockMoveLine[]
   posOrderLines PosOrderLine[]
+  purchaseOrderItems PurchaseOrderItem[]
+  goodsReceiptItems  GoodsReceiptItem[]
 
   @@unique([tenantId, sku])
   @@index([tenantId, categoryId, isActive])
@@ -491,3 +498,127 @@ model Employee {
   @@index([tenantId, department, isActive])
   @@map("employees")
 }
+
+// -------------------------------------------------------------
+// PROCUREMENT & SUPPLIER DOMAIN (PROCURE-TO-PAY)
+// -------------------------------------------------------------
+
+enum PurchaseOrderStatus {
+  DRAFT
+  CONFIRMED
+  RECEIVED
+  BILLED
+  CANCELLED
+}
+
+enum GoodsReceiptStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+model Vendor {
+  id            String          @id @default(cuid())
+  tenantId      String
+  name          String
+  code          String
+  taxId         String?         // e.g. VAT / Tax Reg ID
+  email         String?
+  phone         String?
+  address       String?
+  currency      String          @default("USD")
+  paymentTerms  String          @default("NET30") // NET15, NET30, NET60, DUE_ON_RECEIPT
+  balance       Decimal         @default(0.0) @db.Decimal(18, 4) // Outstanding AP balance
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  tenant        Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  purchaseOrders PurchaseOrder[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, isActive])
+  @@map("vendors")
+}
+
+model PurchaseOrder {
+  id            String              @id @default(cuid())
+  tenantId      String
+  vendorId      String
+  warehouseId   String
+  orderNumber   String              // e.g. PO-2026-0001
+  status        PurchaseOrderStatus @default(DRAFT)
+  totalAmount   Decimal             @default(0.0) @db.Decimal(18, 4)
+  taxAmount     Decimal             @default(0.0) @db.Decimal(18, 4)
+  notes         String?
+  orderDate     DateTime            @default(now())
+  expectedDate  DateTime?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  tenant        Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vendor        Vendor              @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+  warehouse     Warehouse           @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  items         PurchaseOrderItem[]
+  receipts      GoodsReceipt[]
+
+  @@unique([tenantId, orderNumber])
+  @@index([tenantId, vendorId, status])
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id               String        @id @default(cuid())
+  purchaseOrderId  String
+  productId        String
+  quantity         Decimal       @db.Decimal(14, 4)
+  unitPrice        Decimal       @db.Decimal(18, 4)
+  taxRate          Decimal       @default(0.0) @db.Decimal(5, 2)
+  subtotal         Decimal       @db.Decimal(18, 4)
+  receivedQuantity Decimal       @default(0.0) @db.Decimal(14, 4)
+
+  purchaseOrder    PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  product          Product       @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([purchaseOrderId])
+  @@index([productId])
+  @@map("purchase_order_items")
+}
+
+model GoodsReceipt {
+  id              String             @id @default(cuid())
+  tenantId        String
+  purchaseOrderId String
+  locationId      String
+  receiptNumber   String             // e.g. GR-2026-0001
+  status          GoodsReceiptStatus @default(COMPLETED)
+  receivedAt      DateTime           @default(now())
+  receivedById    String?
+  notes           String?
+  createdAt       DateTime           @default(now())
+
+  tenant          Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  purchaseOrder   PurchaseOrder      @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  location        Location           @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  items           GoodsReceiptItem[]
+
+  @@unique([tenantId, receiptNumber])
+  @@index([tenantId, purchaseOrderId])
+  @@map("goods_receipts")
+}
+
+model GoodsReceiptItem {
+  id               String       @id @default(cuid())
+  goodsReceiptId   String
+  productId        String
+  quantityReceived Decimal      @db.Decimal(14, 4)
+  unitCost         Decimal      @db.Decimal(18, 4)
+
+  goodsReceipt     GoodsReceipt @relation(fields: [goodsReceiptId], references: [id], onDelete: Cascade)
+  product          Product      @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([goodsReceiptId])
+  @@index([productId])
+  @@map("goods_receipt_items")
+}
+
