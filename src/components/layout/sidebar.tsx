@@ -17,6 +17,7 @@ import {
   FileSpreadsheet,
   ArrowLeftRight,
   ClipboardCheck,
+  Activity,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { Badge } from "../ui/badge";
@@ -40,6 +41,7 @@ export function Sidebar() {
 
   const adminItems = [
     { name: t("nav.users", "User Management"), href: "/admin/users", icon: UserCog },
+    { name: t("nav.system", "System & Ops Monitoring"), href: "/admin/system", icon: Activity },
   ];
 
   return (

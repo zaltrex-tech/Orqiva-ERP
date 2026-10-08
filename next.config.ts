@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: path.resolve(__dirname),
   reactStrictMode: true,
   poweredByHeader: false,
+  serverExternalPackages: ["bullmq", "ioredis"],
   experimental: {
     serverActions: {
       bodySizeLimit: "10mb",

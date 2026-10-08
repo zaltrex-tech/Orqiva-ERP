@@ -33,3 +33,9 @@ next-env.d.ts
 
 # Prisma generated (unless needed)
 # prisma/generated
+
+# Database Backups
+/backups/
+*.sql.gz
+*.sha256
+
