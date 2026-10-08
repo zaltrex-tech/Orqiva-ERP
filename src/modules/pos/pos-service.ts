@@ -3,6 +3,7 @@ import { recordAuditEvent } from "@/lib/audit";
 import { Result, ok, err } from "../core/result";
 import { StockService } from "../inventory/stock-service";
 import { DoubleEntryEngine } from "../accounting/double-entry-engine";
+import { EInvoiceService } from "../compliance/e-invoice-service";
 import { PosSessionState, AuditAction } from "@prisma/client";
 
 export interface PosCheckoutItem {
@@ -114,7 +115,25 @@ export class PosService {
         return createdOrder;
       });
 
-      return ok({ orderId: order.id });
+      // 4. Generate compliant fiscal e-invoice with TLV QR and cryptographic hash chaining
+      const invoiceResult = await EInvoiceService.generateInvoice({
+        tenantId: session.tenantId,
+        invoiceNumber: orderNumber,
+        sellerName: "Orqiva Enterprise Solutions Ltd",
+        vatNumber: "300492817200003",
+        subtotal,
+        taxAmount: taxTotal,
+        totalAmount,
+        posOrderId: order.id,
+      });
+
+      return ok({
+        orderId: order.id,
+        orderNumber,
+        qrCode: invoiceResult.success ? invoiceResult.value.tlvBase64 : undefined,
+        qrDataUrl: invoiceResult.success ? invoiceResult.value.qrDataUrl : undefined,
+        invoiceHash: invoiceResult.success ? invoiceResult.value.invoiceHash : undefined,
+      });
     } catch (error: any) {
       return err(error.message || "Failed to process POS checkout transaction.");
     }

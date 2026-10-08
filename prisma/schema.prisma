@@ -52,6 +52,9 @@ model Tenant {
   vendors     Vendor[]
   purchaseOrders PurchaseOrder[]
   goodsReceipts  GoodsReceipt[]
+  eInvoices       EInvoice[]
+  transfers       StockTransfer[]
+  adjustments     StockAdjustment[]
 
   @@map("tenants")
 }
@@ -175,6 +178,9 @@ model Location {
   incomingMoves StockMove[] @relation("StockMoveDestLocation")
   outgoingMoves StockMove[] @relation("StockMoveSrcLocation")
   goodsReceipts GoodsReceipt[]
+  transfersOut  StockTransfer[] @relation("TransferSourceLocation")
+  transfersIn   StockTransfer[] @relation("TransferDestLocation")
+  adjustments   StockAdjustment[]
 
   @@index([warehouseId, type])
   @@index([tenantId, type])
@@ -224,6 +230,8 @@ model Product {
   posOrderLines PosOrderLine[]
   purchaseOrderItems PurchaseOrderItem[]
   goodsReceiptItems  GoodsReceiptItem[]
+  transferLines      StockTransferLine[]
+  adjustmentLines    StockAdjustmentLine[]
 
   @@unique([tenantId, sku])
   @@index([tenantId, categoryId, isActive])
@@ -446,10 +454,14 @@ model PosOrder {
   taxAmount       Decimal      @default(0.0) @db.Decimal(18, 4)
   discountAmount  Decimal      @default(0.0) @db.Decimal(18, 4)
   paymentMethod   String       // CASH, CARD, SPLIT
+  qrCode          String?      @db.Text
+  invoiceHash     String?
+  previousHash    String?
   createdAt       DateTime     @default(now())
 
   session         PosSession   @relation(fields: [sessionId], references: [id], onDelete: Restrict)
   lines           PosOrderLine[]
+  eInvoice        EInvoice?
 
   @@unique([tenantId, orderNumber])
   @@index([tenantId, sessionId, createdAt])
@@ -621,4 +633,137 @@ model GoodsReceiptItem {
   @@index([productId])
   @@map("goods_receipt_items")
 }
+
+// -------------------------------------------------------------
+// COMPLIANCE & FISCAL E-INVOICING (ZATCA / CRYPTOGRAPHIC LEDGER)
+// -------------------------------------------------------------
+
+model EInvoice {
+  id                  String   @id @default(cuid())
+  tenantId            String
+  invoiceNumber       String
+  issueDate           DateTime @default(now())
+  sellerName          String
+  vatNumber           String
+  customerName        String?
+  customerVat         String?
+  subtotal            Decimal  @db.Decimal(18, 4)
+  taxAmount           Decimal  @db.Decimal(18, 4)
+  totalAmount         Decimal  @db.Decimal(18, 4)
+  previousHash        String
+  invoiceHash         String
+  tlvBase64           String   @db.Text
+  posOrderId          String?  @unique
+  createdAt           DateTime @default(now())
+
+  tenant              Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  posOrder            PosOrder? @relation(fields: [posOrderId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, invoiceNumber])
+  @@index([tenantId, issueDate])
+  @@map("e_invoices")
+}
+
+// -------------------------------------------------------------
+// MULTI-BRANCH STOCK TRANSFERS & PHYSICAL STOCKTAKE RECONCILIATION
+// -------------------------------------------------------------
+
+enum StockTransferStatus {
+  DRAFT
+  IN_TRANSIT
+  COMPLETED
+  CANCELLED
+}
+
+enum AdjustmentReason {
+  SPOILAGE
+  SHRINKAGE
+  COUNT_CORRECTION
+  FOUND
+}
+
+enum AdjustmentStatus {
+  DRAFT
+  POSTED
+  CANCELLED
+}
+
+model StockTransfer {
+  id                  String              @id @default(cuid())
+  tenantId            String
+  transferNumber      String              // e.g. TR-2026-0001
+  sourceLocationId    String
+  destLocationId      String
+  status              StockTransferStatus @default(DRAFT)
+  dispatchedAt        DateTime?
+  receivedAt          DateTime?
+  notes               String?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  tenant              Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sourceLocation      Location            @relation("TransferSourceLocation", fields: [sourceLocationId], references: [id], onDelete: Restrict)
+  destLocation        Location            @relation("TransferDestLocation", fields: [destLocationId], references: [id], onDelete: Restrict)
+  lines               StockTransferLine[]
+
+  @@unique([tenantId, transferNumber])
+  @@index([tenantId, status])
+  @@map("stock_transfers")
+}
+
+model StockTransferLine {
+  id                  String        @id @default(cuid())
+  transferId          String
+  productId           String
+  quantity            Decimal       @db.Decimal(14, 4)
+  receivedQty         Decimal       @default(0.0) @db.Decimal(14, 4)
+
+  transfer            StockTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  product             Product       @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([transferId])
+  @@index([productId])
+  @@map("stock_transfer_lines")
+}
+
+model StockAdjustment {
+  id                  String            @id @default(cuid())
+  tenantId            String
+  adjustmentNumber    String            // e.g. ADJ-2026-0001
+  locationId          String
+  reason              AdjustmentReason
+  status              AdjustmentStatus  @default(DRAFT)
+  notes               String?
+  postedAt            DateTime?
+  journalEntryId      String?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  tenant              Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  location            Location          @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  lines               StockAdjustmentLine[]
+
+  @@unique([tenantId, adjustmentNumber])
+  @@index([tenantId, status])
+  @@map("stock_adjustments")
+}
+
+model StockAdjustmentLine {
+  id                  String          @id @default(cuid())
+  adjustmentId        String
+  productId           String
+  systemQuantity      Decimal         @db.Decimal(14, 4)
+  countedQuantity     Decimal         @db.Decimal(14, 4)
+  varianceQuantity    Decimal         @db.Decimal(14, 4)
+  unitCost            Decimal         @db.Decimal(18, 4)
+  totalCostVariance   Decimal         @db.Decimal(18, 4)
+
+  adjustment          StockAdjustment @relation(fields: [adjustmentId], references: [id], onDelete: Cascade)
+  product             Product         @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([adjustmentId])
+  @@index([productId])
+  @@map("stock_adjustment_lines")
+}
+
 

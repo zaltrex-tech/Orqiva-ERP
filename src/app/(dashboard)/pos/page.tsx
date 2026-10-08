@@ -66,6 +66,8 @@ export default function PosPage() {
     taxAmount: number;
     totalAmount: number;
     paymentMethod: "CASH" | "CARD";
+    qrCodeDataUrl?: string;
+    invoiceHash?: string;
   } | null>(null);
 
   // Fetch live products and session from PostgreSQL database
@@ -348,6 +350,8 @@ export default function PosPage() {
         taxAmount: tax,
         totalAmount: total,
         paymentMethod,
+        qrCodeDataUrl: data.data?.qrDataUrl,
+        invoiceHash: data.data?.invoiceHash,
       });
 
       // Clear cart & refresh database stock quantities
@@ -594,6 +598,8 @@ export default function PosPage() {
                   taxAmount={receiptData.taxAmount}
                   totalAmount={receiptData.totalAmount}
                   paymentMethod={receiptData.paymentMethod}
+                  qrCodeDataUrl={receiptData.qrCodeDataUrl}
+                  invoiceHash={receiptData.invoiceHash}
                   autoPrint={true}
                   onPrintCompleted={() => {
                     toast.info("Thermal Print Dialog Triggered", {

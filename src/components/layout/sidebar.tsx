@@ -15,6 +15,8 @@ import {
   UserCog,
   Truck,
   FileSpreadsheet,
+  ArrowLeftRight,
+  ClipboardCheck,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { Badge } from "../ui/badge";
@@ -27,6 +29,8 @@ export function Sidebar() {
   const domainItems = [
     { name: t("nav.overview", "Executive Overview"), href: "/", icon: LayoutDashboard },
     { name: t("nav.inventory", "Inventory & Logistics"), href: "/inventory", icon: Boxes },
+    { name: t("nav.transfers", "Stock Transfers"), href: "/inventory/transfers", icon: ArrowLeftRight },
+    { name: t("nav.adjustments", "Stocktake Adjustments"), href: "/inventory/adjustments", icon: ClipboardCheck },
     { name: t("nav.purchases", "Purchases & Suppliers"), href: "/purchases", icon: Truck },
     { name: t("nav.pos", "Point of Sale"), href: "/pos", icon: CircleDollarSign },
     { name: t("nav.accounting", "Financial Accounting"), href: "/accounting", icon: Receipt },
