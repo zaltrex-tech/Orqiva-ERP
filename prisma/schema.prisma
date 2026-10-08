@@ -1,0 +1,493 @@
+// Orqiva ERP - Prisma Schema
+// Optimized for PostgreSQL Enterprise Scale, High Concurrency & Multi-Tenancy
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// -------------------------------------------------------------
+// CORE & RBAC DOMAIN (SOC-2 & GDPR COMPLIANT)
+// -------------------------------------------------------------
+
+enum UserRole {
+  SUPER_ADMIN
+  ACCOUNTANT
+  INVENTORY_MANAGER
+  CASHIER
+  HR_MANAGER
+  AUDITOR
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  INVITED
+  DEACTIVATED
+}
+
+model Tenant {
+  id          String   @id @default(cuid())
+  name        String
+  code        String   @unique
+  currency    String   @default("USD")
+  fiscalYearStartMonth Int @default(1)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       User[]
+  warehouses  Warehouse[]
+  products    Product[]
+  categories  ProductCategory[]
+  journals    Journal[]
+  accounts    Account[]
+  employees   Employee[]
+  auditLogs   AuditLog[]
+
+  @@map("tenants")
+}
+
+model User {
+  id            String     @id @default(cuid())
+  tenantId      String
+  email         String
+  passwordHash  String
+  fullName      String
+  role          UserRole   @default(CASHIER)
+  status        UserStatus @default(ACTIVE)
+  phoneNumber   String?
+  mfaEnabled    Boolean    @default(false)
+  lastLoginAt   DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  tenant        Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  auditLogs     AuditLog[]
+  posSessions   PosSession[]
+  stockMovesCreated StockMove[] @relation("StockMoveCreator")
+
+  @@unique([tenantId, email])
+  @@index([tenantId, role, status])
+  @@map("users")
+}
+
+// -------------------------------------------------------------
+// IMMUTABLE AUDIT TRAIL (SOC-2 / GDPR EVIDENCE)
+// -------------------------------------------------------------
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  POST_LEDGER
+  REVERSE_LEDGER
+  STOCK_ADJUSTMENT
+  POS_CLOSE_SESSION
+  SECURITY_LOGIN
+  SECURITY_FAILED_AUTH
+}
+
+model AuditLog {
+  id          String      @id @default(cuid())
+  tenantId    String
+  actorId     String?
+  action      AuditAction
+  entityType  String
+  entityId    String
+  ipAddress   String?
+  userAgent   String?
+  beforeState Json?
+  afterState  Json?
+  metadata    Json?
+  createdAt   DateTime    @default(now())
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  actor       User?       @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, entityType, entityId, createdAt])
+  @@index([tenantId, actorId, createdAt])
+  @@index([tenantId, action, createdAt])
+  @@map("audit_logs")
+}
+
+// -------------------------------------------------------------
+// INVENTORY DOMAIN (ODOO-COMPATIBLE MULTI-WAREHOUSE & ROUTING)
+// -------------------------------------------------------------
+
+enum LocationType {
+  INTERNAL
+  VENDOR
+  CUSTOMER
+  TRANSIT
+  INVENTORY_LOSS
+  PRODUCTION
+}
+
+enum ValuationMethod {
+  FIFO
+  AVCO
+  STANDARD
+}
+
+model Warehouse {
+  id          String     @id @default(cuid())
+  tenantId    String
+  name        String
+  code        String
+  address     String?
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  tenant      Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  locations   Location[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, isActive])
+  @@map("warehouses")
+}
+
+model Location {
+  id          String       @id @default(cuid())
+  tenantId    String
+  warehouseId String?
+  name        String
+  barcode     String?
+  type        LocationType @default(INTERNAL)
+  parentId    String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  warehouse   Warehouse?   @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  parent      Location?    @relation("LocationHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  children    Location[]   @relation("LocationHierarchy")
+  quants      StockQuant[]
+  incomingMoves StockMove[] @relation("StockMoveDestLocation")
+  outgoingMoves StockMove[] @relation("StockMoveSrcLocation")
+
+  @@index([warehouseId, type])
+  @@index([tenantId, type])
+  @@map("locations")
+}
+
+model ProductCategory {
+  id              String          @id @default(cuid())
+  tenantId        String
+  name            String
+  code            String
+  valuationMethod ValuationMethod @default(AVCO)
+  inventoryValuationAccountId String?
+  stockInputAccountId         String?
+  stockOutputAccountId        String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  products        Product[]
+
+  @@unique([tenantId, code])
+  @@map("product_categories")
+}
+
+model Product {
+  id            String          @id @default(cuid())
+  tenantId      String
+  categoryId    String
+  sku           String
+  barcode       String?
+  name          String
+  description   String?
+  uom           String          @default("Units") // Unit of measure
+  costPrice     Decimal         @default(0.0) @db.Decimal(18, 4)
+  sellingPrice  Decimal         @default(0.0) @db.Decimal(18, 4)
+  taxRate       Decimal         @default(0.0) @db.Decimal(5, 2) // e.g. 15.00%
+  minStockAlert Decimal         @default(10.0) @db.Decimal(14, 4)
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  tenant        Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category      ProductCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  quants        StockQuant[]
+  stockMoveLines StockMoveLine[]
+  posOrderLines PosOrderLine[]
+
+  @@unique([tenantId, sku])
+  @@index([tenantId, categoryId, isActive])
+  @@index([tenantId, barcode])
+  @@map("products")
+}
+
+// High-concurrency row-level stock quant
+// Critical: strict unique constraint on (tenantId, productId, locationId)
+model StockQuant {
+  id                String   @id @default(cuid())
+  tenantId          String
+  productId         String
+  locationId        String
+  quantity          Decimal  @default(0.0) @db.Decimal(14, 4)
+  reservedQuantity  Decimal  @default(0.0) @db.Decimal(14, 4)
+  version           Int      @default(0) // Optimistic concurrency control counter
+  updatedAt         DateTime @updatedAt
+
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  location          Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, productId, locationId])
+  @@index([tenantId, productId])
+  @@index([tenantId, locationId])
+  @@map("stock_quants")
+}
+
+enum StockMoveState {
+  DRAFT
+  WAITING
+  CONFIRMED
+  ASSIGNED // Reserved
+  DONE
+  CANCELLED
+}
+
+model StockMove {
+  id                String         @id @default(cuid())
+  tenantId          String
+  reference         String         // e.g. WH/IN/0001, WH/OUT/0001
+  sourceLocationId  String
+  destLocationId    String
+  state             StockMoveState @default(DRAFT)
+  scheduledDate     DateTime       @default(now())
+  dateDone          DateTime?
+  originDocument    String?        // PO, SO, or POS Order ID
+  createdById       String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  sourceLocation    Location       @relation("StockMoveSrcLocation", fields: [sourceLocationId], references: [id])
+  destLocation      Location       @relation("StockMoveDestLocation", fields: [destLocationId], references: [id])
+  createdBy         User?          @relation("StockMoveCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  lines             StockMoveLine[]
+
+  @@index([tenantId, state, scheduledDate])
+  @@index([tenantId, reference])
+  @@map("stock_moves")
+}
+
+model StockMoveLine {
+  id              String    @id @default(cuid())
+  stockMoveId     String
+  productId       String
+  qtyDemand       Decimal   @db.Decimal(14, 4)
+  qtyDone         Decimal   @default(0.0) @db.Decimal(14, 4)
+  unitCost        Decimal   @default(0.0) @db.Decimal(18, 4)
+
+  stockMove       StockMove @relation(fields: [stockMoveId], references: [id], onDelete: Cascade)
+  product         Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([stockMoveId])
+  @@index([productId])
+  @@map("stock_move_lines")
+}
+
+// -------------------------------------------------------------
+// ACCOUNTING DOMAIN (STRICT DOUBLE-ENTRY LEDGER)
+// Invariant: SUM(debit) == SUM(credit) for every posted entry
+// -------------------------------------------------------------
+
+enum AccountType {
+  ASSET_CURRENT
+  ASSET_NON_CURRENT
+  LIABILITY_CURRENT
+  LIABILITY_NON_CURRENT
+  EQUITY
+  INCOME
+  EXPENSE
+  COST_OF_REVENUE
+}
+
+enum JournalType {
+  SALE
+  PURCHASE
+  CASH
+  BANK
+  GENERAL
+}
+
+enum EntryState {
+  DRAFT
+  POSTED
+  CANCELLED
+}
+
+model Account {
+  id          String      @id @default(cuid())
+  tenantId    String
+  code        String      // e.g. 1010, 2000, 4000
+  name        String      // e.g. "Main Cash", "Accounts Receivable"
+  type        AccountType
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  journalItems JournalItem[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, type, isActive])
+  @@map("accounts")
+}
+
+model Journal {
+  id          String      @id @default(cuid())
+  tenantId    String
+  code        String      // e.g. CS, BNK, GEN
+  name        String
+  type        JournalType
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  entries     JournalEntry[]
+
+  @@unique([tenantId, code])
+  @@map("journals")
+}
+
+model JournalEntry {
+  id              String      @id @default(cuid())
+  tenantId        String
+  journalId       String
+  entryNumber     String      // e.g. JE-2026-00001
+  date            DateTime    @default(now())
+  reference       String?
+  narrative       String?
+  state           EntryState  @default(DRAFT)
+  postedAt        DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  journal         Journal     @relation(fields: [journalId], references: [id], onDelete: Restrict)
+  items           JournalItem[]
+
+  @@unique([tenantId, entryNumber])
+  @@index([tenantId, journalId, date])
+  @@index([tenantId, state, date])
+  @@map("journal_entries")
+}
+
+model JournalItem {
+  id              String       @id @default(cuid())
+  tenantId        String
+  entryId         String
+  accountId       String
+  label           String?
+  debit           Decimal      @default(0.0) @db.Decimal(18, 4)
+  credit          Decimal      @default(0.0) @db.Decimal(18, 4)
+  reconciled      Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+
+  entry           JournalEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  account         Account      @relation(fields: [accountId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, accountId])
+  @@index([entryId])
+  @@map("journal_items")
+}
+
+// -------------------------------------------------------------
+// POINT OF SALE (POS) DOMAIN
+// -------------------------------------------------------------
+
+enum PosSessionState {
+  OPENING_CONTROL
+  OPENED
+  CLOSING_CONTROL
+  CLOSED
+}
+
+model PosSession {
+  id              String          @id @default(cuid())
+  tenantId        String
+  cashierId       String
+  sessionNumber   String          // e.g. POS-SESS-00045
+  state           PosSessionState @default(OPENED)
+  openingBalance  Decimal         @default(0.0) @db.Decimal(18, 4)
+  closingBalance  Decimal?        @db.Decimal(18, 4)
+  totalSales      Decimal         @default(0.0) @db.Decimal(18, 4)
+  openedAt        DateTime        @default(now())
+  closedAt        DateTime?
+
+  cashier         User            @relation(fields: [cashierId], references: [id], onDelete: Restrict)
+  orders          PosOrder[]
+
+  @@unique([tenantId, sessionNumber])
+  @@index([tenantId, cashierId, state])
+  @@map("pos_sessions")
+}
+
+model PosOrder {
+  id              String       @id @default(cuid())
+  tenantId        String
+  sessionId       String
+  orderNumber     String       // e.g. POS-ORD-0001
+  totalAmount     Decimal      @db.Decimal(18, 4)
+  taxAmount       Decimal      @default(0.0) @db.Decimal(18, 4)
+  discountAmount  Decimal      @default(0.0) @db.Decimal(18, 4)
+  paymentMethod   String       // CASH, CARD, SPLIT
+  createdAt       DateTime     @default(now())
+
+  session         PosSession   @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  lines           PosOrderLine[]
+
+  @@unique([tenantId, orderNumber])
+  @@index([tenantId, sessionId, createdAt])
+  @@map("pos_orders")
+}
+
+model PosOrderLine {
+  id              String    @id @default(cuid())
+  orderId         String
+  productId       String
+  quantity        Decimal   @db.Decimal(14, 4)
+  unitPrice       Decimal   @db.Decimal(18, 4)
+  taxAmount       Decimal   @default(0.0) @db.Decimal(18, 4)
+  subtotal        Decimal   @db.Decimal(18, 4)
+
+  order           PosOrder  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product         Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("pos_order_lines")
+}
+
+// -------------------------------------------------------------
+// HUMAN RESOURCES (HR) DOMAIN
+// -------------------------------------------------------------
+
+model Employee {
+  id              String    @id @default(cuid())
+  tenantId        String
+  employeeCode    String    // e.g. EMP-001
+  firstName       String
+  lastName        String
+  email           String
+  department      String
+  position        String
+  basicSalary     Decimal   @db.Decimal(18, 4)
+  isActive        Boolean   @default(true)
+  joinedDate      DateTime
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, employeeCode])
+  @@index([tenantId, department, isActive])
+  @@map("employees")
+}
