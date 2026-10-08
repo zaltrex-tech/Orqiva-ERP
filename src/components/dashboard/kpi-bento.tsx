@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { TrendingUp, Boxes, CircleDollarSign, Users, ArrowUpRight, RefreshCw } from "lucide-react";
+import { TrendingUp, Boxes, CircleDollarSign, Users, ArrowUpRight } from "lucide-react";
 import { Card } from "../ui/card";
 import { Badge } from "../ui/badge";
+import { useI18n } from "@/lib/i18n/context";
 
 export interface KpiData {
   salesRevenue: number;
@@ -15,8 +16,9 @@ export interface KpiData {
 }
 
 export function KpiBento({ initialData }: { initialData?: KpiData }) {
+  const { t } = useI18n();
   const [kpis, setKpis] = useState<KpiData | null>(initialData || null);
-  const [loading, setLoading] = useState(!initialData);
+  const [, setLoading] = useState(!initialData);
 
   const fetchKpis = async () => {
     try {
@@ -48,49 +50,49 @@ export function KpiBento({ initialData }: { initialData?: KpiData }) {
 
   const stats = [
     {
-      title: "Real-Time Sales Revenue",
+      title: t("dashboard.kpiSalesRevenue", "Real-Time Sales Revenue"),
       value: `$${salesRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
       change: "+14.8%",
       changeType: "positive",
-      subtext: "vs prior 30-day billing cycle",
+      subtext: t("dashboard.kpiSalesSub", "vs prior 30-day billing cycle"),
       icon: TrendingUp,
-      badge: "Double-Entry Verified",
+      badge: t("dashboard.doubleEntryVerified", "Double-Entry Verified"),
       badgeVariant: "emerald" as const,
       color: "from-amber-500/10 to-amber-500/0",
       iconColor: "text-amber-400",
     },
     {
-      title: "Inventory Asset Valuation",
+      title: t("dashboard.kpiInventoryValuation", "Inventory Asset Valuation"),
       value: `$${stockValuation.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
-      change: `${stockUnits} Units`,
+      change: `${stockUnits} ${t("common.units", "Units")}`,
       changeType: "neutral",
-      subtext: "AVCO Moving Average Costing",
+      subtext: t("dashboard.avcoCosting", "AVCO Moving Average Costing"),
       icon: Boxes,
-      badge: "PostgreSQL Live Quants",
+      badge: t("dashboard.liveQuants", "PostgreSQL Live Quants"),
       badgeVariant: "indigo" as const,
       color: "from-indigo-500/10 to-indigo-500/0",
       iconColor: "text-indigo-400",
     },
     {
-      title: "Active POS Registers",
+      title: t("dashboard.kpiActivePos", "Active POS Registers"),
       value: `$${(activeSessions * 12480).toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
-      change: `${activeSessions} Active Register`,
+      change: `${activeSessions} ${t("dashboard.activeRegister", "Active Register")}`,
       changeType: "positive",
-      subtext: "Cash Floats Reconciled",
+      subtext: t("dashboard.cashFloatsReconciled", "Cash Floats Reconciled"),
       icon: CircleDollarSign,
-      badge: "Row-Locked Sessions",
+      badge: t("dashboard.rowLockedSessions", "Row-Locked Sessions"),
       badgeVariant: "amber" as const,
       color: "from-amber-500/10 to-amber-500/0",
       iconColor: "text-amber-400",
     },
     {
-      title: "Monthly Payroll Obligation",
+      title: t("dashboard.kpiPayrollObligation", "Monthly Payroll Obligation"),
       value: `$${payrollLiability.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
-      change: `${employeeCount} Staff Members`,
+      change: `${employeeCount} ${t("dashboard.staffMembers", "Staff Members")}`,
       changeType: "positive",
-      subtext: "10% Tax Auto-Withheld",
+      subtext: t("dashboard.taxWithheldSub", "10% Tax Auto-Withheld"),
       icon: Users,
-      badge: "Auto-Journaled",
+      badge: t("dashboard.autoJournaled", "Auto-Journaled"),
       badgeVariant: "slate" as const,
       color: "from-slate-500/10 to-slate-500/0",
       iconColor: "text-slate-300",
@@ -134,7 +136,7 @@ export function KpiBento({ initialData }: { initialData?: KpiData }) {
               <Badge variant={stat.badgeVariant} className="text-[10px] py-0 px-2 font-mono">
                 {stat.badge}
               </Badge>
-              <span className="text-[10px] text-slate-400 font-mono">SOC-2 VERIFIED</span>
+              <span className="text-[10px] text-slate-400 font-mono">{t("dashboard.soc2Verified", "SOC-2 VERIFIED")}</span>
             </div>
           </Card>
         );

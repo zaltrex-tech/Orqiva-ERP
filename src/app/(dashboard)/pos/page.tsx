@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { ThermalReceipt, ReceiptLineItem } from "@/components/pos/thermal-receipt";
+import { useI18n } from "@/lib/i18n/context";
 import {
   CircleDollarSign,
   Plus,
@@ -54,6 +55,7 @@ interface LocationData {
 }
 
 export default function PosPage() {
+  const { t } = useI18n();
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [session, setSession] = useState<ActiveSessionData | null>(null);
   const [locations, setLocations] = useState<LocationData>({ stockLocationId: "", customerLocationId: "" });
@@ -82,8 +84,8 @@ export default function PosPage() {
       }
     } catch (err) {
       console.error("Failed to load POS data:", err);
-      toast.error("Failed to connect to POS database", {
-        description: "Verify database status in health dashboard.",
+      toast.error(t("pos.networkErrorTitle", "Failed to connect to POS database"), {
+        description: t("pos.networkErrorDesc", "Verify database status in health dashboard."),
       });
     }
   };
@@ -144,21 +146,21 @@ export default function PosPage() {
     if (matched) {
       if (matched.stockAvailable <= 0) {
         playScannerBeep("error");
-        toast.warning("Scanned Product Out of Stock", {
-          description: `Product ${matched.name} has zero available shelf quants.`,
+        toast.warning(t("pos.scannedOutOfStock", "Scanned Product Out of Stock"), {
+          description: `${t("pos.product", "Product")} ${matched.name} ${t("pos.scannedOutOfStockDesc", "has zero available shelf quants.")}`,
         });
         return;
       }
       addToCart(matched);
       playScannerBeep("success");
-      toast.success(`Scanned: ${matched.name}`, {
-        description: `SKU [${matched.sku}] automatically appended to POS register.`,
+      toast.success(`${t("pos.scannedSuccess", "Scanned")}: ${matched.name}`, {
+        description: `[${matched.sku}] ${t("pos.scannedSuccessDesc", "automatically appended to POS register.")}`,
         duration: 3000,
       });
     } else {
       playScannerBeep("error");
-      toast.error(`Barcode Not Found: "${trimmed}"`, {
-        description: "SKU is not registered in the active inventory catalog.",
+      toast.error(`${t("pos.barcodeNotFound", "Barcode Not Found")}: "${trimmed}"`, {
+        description: t("pos.barcodeNotFoundDesc", "SKU is not registered in the active inventory catalog."),
         duration: 4000,
       });
     }
@@ -220,8 +222,8 @@ export default function PosPage() {
 
   const addToCart = (product: ProductItem) => {
     if (product.stockAvailable <= 0) {
-      toast.warning("Product Out of Stock", {
-        description: `${product.name} currently has 0 units available on shelf.`,
+      toast.warning(t("pos.outOfStock", "Product Out of Stock"), {
+        description: `${product.name} ${t("pos.outOfStockDesc", "currently has 0 units available on shelf.")}`,
       });
       return;
     }
@@ -230,8 +232,8 @@ export default function PosPage() {
       const existing = prev.find((i) => i.id === product.id);
       if (existing) {
         if (existing.qty >= product.stockAvailable) {
-          toast.warning("Quantity Limit Reached", {
-            description: `Only ${product.stockAvailable} units available in stock.`,
+          toast.warning(t("pos.limitReached", "Quantity Limit Reached"), {
+            description: `${t("pos.only", "Only")} ${product.stockAvailable} ${t("common.units", "units")} ${t("pos.availableInStock", "available in stock.")}`,
           });
           return prev;
         }
@@ -249,8 +251,8 @@ export default function PosPage() {
             const newQty = i.qty + delta;
             const product = products.find((p) => p.id === id);
             if (product && newQty > product.stockAvailable) {
-              toast.warning("Stock Exceeded", {
-                description: `Maximum ${product.stockAvailable} available.`,
+              toast.warning(t("pos.stockExceeded", "Stock Exceeded"), {
+                description: `${t("pos.maximum", "Maximum")} ${product.stockAvailable} ${t("pos.available", "available.")}`,
               });
               return i;
             }
@@ -269,8 +271,8 @@ export default function PosPage() {
   const handleCheckout = async (paymentMethod: "CASH" | "CARD") => {
     if (cart.length === 0) return;
     if (!session || !locations.stockLocationId) {
-      toast.error("POS Register Session Inactive", {
-        description: "Cannot process orders without an active cashier session.",
+      toast.error(t("pos.sessionInactive", "POS Register Session Inactive"), {
+        description: t("pos.sessionInactiveDesc", "Cannot process orders without an active cashier session."),
       });
       return;
     }
@@ -312,12 +314,12 @@ export default function PosPage() {
           errorText.toLowerCase().includes("lock") ||
           errorText.toLowerCase().includes("depleted")
         ) {
-          toast.error("Stock Depleted by Another Transaction", {
-            description: "A concurrent terminal claimed this inventory shelf under row-level lock. Re-syncing stock...",
+          toast.error(t("pos.stockConflictTitle", "Stock Depleted by Another Transaction"), {
+            description: t("pos.stockConflictDesc", "A concurrent terminal claimed this inventory shelf under row-level lock. Re-syncing stock..."),
             duration: 6000,
           });
         } else {
-          toast.error("Checkout Transaction Rejected", {
+          toast.error(t("pos.checkoutRejectedTitle", "Checkout Transaction Rejected"), {
             description: errorText,
             duration: 5000,
           });
@@ -329,8 +331,8 @@ export default function PosPage() {
       }
 
       // Success UX: Notify Cashier
-      toast.success("Transaction Approved & Stock Locked", {
-        description: `Order ${orderNumber} committed to ledger. Dispatching 80mm thermal print job...`,
+      toast.success(t("pos.txnApprovedTitle", "Transaction Approved & Stock Locked"), {
+        description: `${orderNumber} ${t("pos.txnApprovedDesc", "committed to ledger. Dispatching 80mm thermal print job...")}`,
         duration: 5000,
       });
 
@@ -368,7 +370,7 @@ export default function PosPage() {
   };
 
   return (
-    <ErrorBoundary fallbackMessage="Point of Sale Terminal interface encountered an error. Hardware safety lock engaged.">
+    <ErrorBoundary fallbackMessage={t("common.error", "Point of Sale Terminal interface encountered an error. Hardware safety lock engaged.")}>
       <div className="space-y-6">
         {/* Session Status Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-xl bg-slate-900/60 border border-slate-800 backdrop-blur-xl">
@@ -378,13 +380,13 @@ export default function PosPage() {
             </div>
             <div>
               <div className="text-sm font-semibold text-slate-100 flex items-center gap-2">
-                POS Terminal 01 • Session #{session?.sessionNumber || "POS-SESS-00045"}
+                {t("pos.title", "POS Terminal 01")} • {session?.sessionNumber || "POS-SESS-00045"}
                 <Badge variant="emerald" className="text-[10px] py-0 font-mono">
-                  OPENED
+                  {t("pos.opened", "OPENED")}
                 </Badge>
               </div>
               <div className="text-xs text-slate-400">
-                Cashier: <span className="text-slate-200">{session?.cashierName || "Sarah Jenkins"}</span> • Cash Float:{" "}
+                {t("pos.cashier", "Cashier")}: <span className="text-slate-200">{session?.cashierName || "Sarah Jenkins"}</span> • {t("pos.cashFloat", "Cash Float")}:{" "}
                 <span className="font-mono text-amber-400">${session?.openingBalance?.toFixed(2) || "250.00"}</span>
               </div>
             </div>
@@ -393,14 +395,14 @@ export default function PosPage() {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-[10px]">
               <Barcode className="w-3.5 h-3.5" />
-              <span>SCANNER ACTIVE (&lt;50ms)</span>
+              <span>{t("pos.scannerActive", "SCANNER ACTIVE (<50ms)")}</span>
             </div>
             <Button variant="ghost" size="sm" onClick={loadPosData} className="gap-1.5 text-xs">
               <RefreshCw className="w-3.5 h-3.5" />
-              Re-sync Catalog
+              {t("pos.resyncCatalog", "Re-sync Catalog")}
             </Button>
             <Badge variant="indigo" className="font-mono text-[10px] self-start md:self-auto">
-              LOCKING: FOR UPDATE + READ COMMITTED
+              {t("pos.lockingInfo", "LOCKING: FOR UPDATE + READ COMMITTED")}
             </Badge>
           </div>
         </div>
@@ -412,7 +414,7 @@ export default function PosPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
                 <ShoppingBag className="w-4 h-4 text-amber-400" />
-                Live Product Catalog ({products.length} SKUs)
+                {t("pos.catalogTitle", "Live Product Catalog")} ({products.length} {t("pos.skus", "SKUs")})
               </h2>
 
               <div className="flex items-center gap-2">
@@ -420,7 +422,7 @@ export default function PosPage() {
                   <ScanLine className="w-3.5 h-3.5 absolute start-2.5 text-slate-400" />
                   <input
                     type="text"
-                    placeholder="Scan Barcode / SKU..."
+                    placeholder={t("pos.searchPlaceholder", "Scan Barcode / SKU...")}
                     value={manualBarcode}
                     onChange={(e) => setManualBarcode(e.target.value)}
                     onKeyDown={(e) => {
@@ -464,7 +466,7 @@ export default function PosPage() {
                         variant={isOutOfStock ? "rose" : item.stockAvailable <= 20 ? "amber" : "slate"}
                         className="text-[10px]"
                       >
-                        {item.stockAvailable} on shelf
+                        {item.stockAvailable} {t("pos.onShelf", "on shelf")}
                       </Badge>
                     </div>
                   </Card>
@@ -477,16 +479,16 @@ export default function PosPage() {
           <Card className="bg-slate-900/60 border-slate-800 flex flex-col justify-between h-[560px]">
             <div>
               <CardHeader>
-                <CardTitle>Active Register Cart</CardTitle>
+                <CardTitle>{t("pos.activeCart", "Active Register Cart")}</CardTitle>
                 <Badge variant="amber" className="font-mono text-[10px]">
-                  {cart.length} ITEMS
+                  {cart.length} {t("pos.itemsCount", "ITEMS")}
                 </Badge>
               </CardHeader>
 
               <div className="overflow-y-auto max-h-[300px] space-y-2 pe-1">
                 {cart.length === 0 ? (
                   <div className="text-center py-16 text-slate-400 text-xs">
-                    Cart is empty. Tap products to add to current ticket.
+                    {t("pos.emptyCart", "Cart is empty. Tap products to add to current ticket.")}
                   </div>
                 ) : (
                   cart.map((item) => (
@@ -497,7 +499,7 @@ export default function PosPage() {
                       <div className="space-y-0.5 max-w-[130px]">
                         <div className="font-medium text-slate-200 truncate">{item.name}</div>
                         <div className="font-mono text-slate-400 text-[10px]">
-                          ${item.price.toFixed(2)} ea
+                          ${item.price.toFixed(2)}
                         </div>
                       </div>
 
@@ -531,15 +533,15 @@ export default function PosPage() {
             <div className="pt-4 border-t border-slate-800 space-y-3">
               <div className="space-y-1.5 text-xs">
                 <div className="flex justify-between text-slate-400">
-                  <span>Subtotal:</span>
+                  <span>{t("pos.subtotal", "Subtotal")}:</span>
                   <span className="font-mono text-slate-200">${subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-slate-400">
-                  <span>VAT / Sales Tax (15%):</span>
+                  <span>{t("pos.vat", "VAT / Sales Tax (15%):")}</span>
                   <span className="font-mono text-slate-200">${tax.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm font-bold text-slate-100 pt-1.5 border-t border-slate-800/80">
-                  <span>Total Amount Due:</span>
+                  <span>{t("pos.totalDue", "Total Amount Due:")}</span>
                   <span className="font-mono text-amber-400">${total.toFixed(2)}</span>
                 </div>
               </div>
@@ -553,7 +555,7 @@ export default function PosPage() {
                   className="gap-1.5"
                 >
                   <Banknote className="w-3.5 h-3.5" />
-                  {isProcessing ? "Locking..." : "Pay Cash"}
+                  {isProcessing ? t("pos.locking", "Locking...") : t("pos.payCash", "Pay Cash")}
                 </Button>
                 <Button
                   variant="secondary"
@@ -563,7 +565,7 @@ export default function PosPage() {
                   className="gap-1.5"
                 >
                   <CreditCard className="w-3.5 h-3.5" />
-                  {isProcessing ? "Locking..." : "Pay Card"}
+                  {isProcessing ? t("pos.locking", "Locking...") : t("pos.payCard", "Pay Card")}
                 </Button>
               </div>
             </div>
@@ -577,7 +579,7 @@ export default function PosPage() {
               <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                 <div className="flex items-center gap-2">
                   <Printer className="w-5 h-5 text-amber-400" />
-                  <span className="font-bold text-slate-100 text-sm">80mm Thermal Receipt</span>
+                  <span className="font-bold text-slate-100 text-sm">{t("pos.receiptTitle", "80mm Thermal Receipt")}</span>
                 </div>
                 <button
                   onClick={() => setReceiptData(null)}
@@ -602,8 +604,8 @@ export default function PosPage() {
                   invoiceHash={receiptData.invoiceHash}
                   autoPrint={true}
                   onPrintCompleted={() => {
-                    toast.info("Thermal Print Dialog Triggered", {
-                      description: "Document routed to 80mm thermal spooler.",
+                    toast.info(t("pos.receiptDialogTitle", "Thermal Print Dialog Triggered"), {
+                      description: t("pos.receiptDialogDesc", "Document routed to 80mm thermal spooler."),
                     });
                   }}
                 />
@@ -617,14 +619,14 @@ export default function PosPage() {
                   className="gap-1.5"
                 >
                   <Printer className="w-3.5 h-3.5" />
-                  Re-print Receipt
+                  {t("pos.reprintReceipt", "Re-print Receipt")}
                 </Button>
                 <Button
                   variant="primary"
                   size="sm"
                   onClick={() => setReceiptData(null)}
                 >
-                  Done
+                  {t("pos.done", "Done")}
                 </Button>
               </div>
             </div>

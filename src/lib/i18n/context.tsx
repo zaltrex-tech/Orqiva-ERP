@@ -39,9 +39,12 @@ export function I18nProvider({
       setLocaleState(stored);
       document.documentElement.dir = stored === "ar" ? "rtl" : "ltr";
       document.documentElement.lang = stored;
+      document.cookie = `NEXT_LOCALE=${stored}; path=/; max-age=31536000; SameSite=Lax`;
     } else {
       document.documentElement.dir = initialLocale === "ar" ? "rtl" : "ltr";
       document.documentElement.lang = initialLocale;
+      localStorage.setItem("orqiva_locale", initialLocale);
+      document.cookie = `NEXT_LOCALE=${initialLocale}; path=/; max-age=31536000; SameSite=Lax`;
     }
   }, [initialLocale]);
 

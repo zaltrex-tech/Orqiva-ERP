@@ -7,9 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, Lock, Mail, ArrowRight, UserCheck } from "lucide-react";
+import { useI18n } from "@/lib/i18n/context";
+import { LanguageSwitcher } from "@/components/layout/language-switcher";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useI18n();
   const [email, setEmail] = useState("cashier@orqiva.io");
   const [password, setPassword] = useState("Admin@Orqiva2026!");
   const [loading, setLoading] = useState(false);
@@ -28,14 +31,17 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        toast.error("Authentication Failed", {
-          description: data.error || "Please check your email and credentials.",
+        toast.error(t("auth.authFailed", "Authentication Failed"), {
+          description: data.error || t("auth.authFailedDesc", "Please check your email and credentials."),
         });
         return;
       }
 
-      toast.success("Identity Verified", {
-        description: `Welcome back, ${data.data.user.fullName}. Redirecting to operational terminal...`,
+      toast.success(t("auth.identityVerified", "Identity Verified"), {
+        description: t("auth.redirecting", "Welcome back, {name}. Redirecting to operational terminal...").replace(
+          "{name}",
+          data.data.user.fullName
+        ),
       });
 
       if (data.data.user.role === "CASHIER") {
@@ -43,9 +49,9 @@ export default function LoginPage() {
       } else {
         router.push("/");
       }
-    } catch (err: any) {
-      toast.error("Network Error", {
-        description: "Failed to connect to authentication gateway.",
+    } catch {
+      toast.error(t("auth.networkError", "Network Error"), {
+        description: t("auth.networkErrorDesc", "Failed to connect to authentication gateway."),
       });
     } finally {
       setLoading(false);
@@ -59,6 +65,11 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      {/* Top Language Switcher */}
+      <div className="absolute top-6 end-6 z-20">
+        <LanguageSwitcher />
+      </div>
+
       {/* Background ambient light */}
       <div className="absolute top-1/4 inset-x-0 mx-auto w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -69,26 +80,28 @@ export default function LoginPage() {
             Ω
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white font-heading">
-            ORQIVA ERP
+            {t("common.appName", "ORQIVA")} ERP
           </h1>
           <p className="text-xs text-slate-400">
-            Modular Monolith Enterprise Gateway • Strict RBAC Enforced
+            {t("auth.subtitle", "Modular Monolith Enterprise Gateway • Strict RBAC Enforced")}
           </p>
         </div>
 
         {/* Login Card */}
         <Card className="bg-slate-900/80 border-slate-800 backdrop-blur-2xl p-6 shadow-luxury-md space-y-5">
           <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-            <span className="text-xs font-semibold text-slate-200">Terminal Authentication</span>
+            <span className="text-xs font-semibold text-slate-200">
+              {t("auth.title", "Terminal Authentication")}
+            </span>
             <Badge variant="amber" className="font-mono text-[10px]">
-              SOC-2 SECURED
+              {t("auth.soc2Secured", "SOC-2 SECURED")}
             </Badge>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-1.5 text-xs">
               <label className="text-slate-300 font-medium flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5 text-amber-400" /> Corporate Email
+                <Mail className="w-3.5 h-3.5 text-amber-400" /> {t("auth.email", "Corporate Email")}
               </label>
               <input
                 id="email-input"
@@ -103,7 +116,7 @@ export default function LoginPage() {
 
             <div className="space-y-1.5 text-xs">
               <label className="text-slate-300 font-medium flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-amber-400" /> Password
+                <Lock className="w-3.5 h-3.5 text-amber-400" /> {t("auth.password", "Password")}
               </label>
               <input
                 id="password-input"
@@ -124,15 +137,15 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full gap-2 mt-2"
             >
-              {loading ? "Authenticating..." : "Authorize Terminal Session"}
-              <ArrowRight className="w-4 h-4" />
+              {loading ? t("auth.authenticating", "Authenticating...") : t("auth.loginBtn", "Authorize Terminal Session")}
+              <ArrowRight className="w-4 h-4 rtl:rotate-180 transition-transform" />
             </Button>
           </form>
 
           {/* Fast-switch buttons for demonstration / testing */}
           <div className="pt-3 border-t border-slate-800/80 space-y-2">
             <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block">
-              Quick Test Credentials:
+              {t("auth.quickCredentials", "Quick Test Credentials:")}
             </span>
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -141,7 +154,7 @@ export default function LoginPage() {
                 className="p-2 rounded-lg bg-slate-950 border border-slate-800 hover:border-amber-500/50 text-[11px] text-slate-300 flex items-center gap-1.5 transition-colors"
               >
                 <UserCheck className="w-3 h-3 text-amber-400" />
-                Senior Cashier
+                {t("auth.cashierRole", "Senior Cashier")}
               </button>
               <button
                 type="button"
@@ -149,7 +162,7 @@ export default function LoginPage() {
                 className="p-2 rounded-lg bg-slate-950 border border-slate-800 hover:border-indigo-500/50 text-[11px] text-slate-300 flex items-center gap-1.5 transition-colors"
               >
                 <ShieldCheck className="w-3 h-3 text-indigo-400" />
-                Super Admin
+                {t("auth.adminRole", "Super Admin")}
               </button>
             </div>
           </div>

@@ -41,7 +41,7 @@ export default async function RootLayout({
   const initialDir = initialLocale === "ar" ? "rtl" : "ltr";
 
   return (
-    <html lang={initialLocale} dir={initialDir} className="dark">
+    <html lang={initialLocale} dir={initialDir} className={`dark ${inter.variable} ${plusJakarta.variable} ${cairo.variable}`}>
       <body
         className={`${inter.variable} ${plusJakarta.variable} ${cairo.variable} font-sans min-h-screen bg-slate-950 text-slate-100 antialiased selection:bg-amber-500 selection:text-slate-950`}
       >

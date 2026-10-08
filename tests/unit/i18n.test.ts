@@ -30,13 +30,23 @@ describe("Internationalization & Bilingual Dictionary Integrity", () => {
     expect(ar.users.statusDeactivated).toBe("معطل");
   });
 
-  it("should match schema parity between en and ar dictionaries", () => {
-    const enUserKeys = Object.keys(en.users);
-    const arUserKeys = Object.keys(ar.users);
-    expect(arUserKeys.sort()).toEqual(enUserKeys.sort());
+  it("should match schema parity across all namespaces between en and ar dictionaries", () => {
+    const namespaces = Object.keys(en) as Array<keyof typeof en>;
+    for (const ns of namespaces) {
+      expect(ar).toHaveProperty(ns);
+      const enKeys = Object.keys(en[ns]).sort();
+      const arKeys = Object.keys(ar[ns]).sort();
+      expect(arKeys).toEqual(enKeys);
+    }
+  });
 
-    const enNavKeys = Object.keys(en.nav);
-    const arNavKeys = Object.keys(ar.nav);
-    expect(arNavKeys.sort()).toEqual(enNavKeys.sort());
+  it("should have complete navigation translations including transfers and adjustments", () => {
+    expect(ar.nav.transfers).toBe("التحويلات المخزنية");
+    expect(ar.nav.adjustments).toBe("الجرد المخزني والتسويات");
+    expect(ar.dashboard.title).toBe("العمليات التشغيلية التنفيذية");
+    expect(ar.inventory.title).toBe("عمليات المخزون والمستودعات المتعددة");
+    expect(ar.accounting.title).toBe("المحاسبة المالية والأستاذ العام");
+    expect(ar.hr.title).toBe("الموارد البشرية ومسير الرواتب الآلي");
+    expect(ar.auth.title).toBe("تسجيل الدخول إلى بوابة النظام");
   });
 });
