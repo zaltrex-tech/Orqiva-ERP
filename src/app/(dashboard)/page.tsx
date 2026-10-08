@@ -98,7 +98,7 @@ export default function DashboardOverviewPage() {
                   </div>
                   <div className="text-[11px] text-slate-400 font-mono">Location: BRANCH-MAIN/Stock (Internal Storage)</div>
                 </div>
-                <div className="text-right">
+                <div className="text-end">
                   <div className="text-xs font-bold text-amber-400 font-mono">10 Product SKUs / 1,205 Units</div>
                   <div className="text-[10px] text-emerald-400">Pessimistic Locking Active</div>
                 </div>
@@ -109,7 +109,7 @@ export default function DashboardOverviewPage() {
                   <div className="text-xs font-semibold text-slate-200">Virtual Commercial Customers (VIRT/CUST)</div>
                   <div className="text-[11px] text-slate-400 font-mono">Automated Destination for Completed POS Sales</div>
                 </div>
-                <div className="text-right">
+                <div className="text-end">
                   <div className="text-xs font-bold text-slate-200 font-mono">Fulfilled via FIFO/AVCO</div>
                   <div className="text-[10px] text-slate-400">Moving Average Cost Tracked</div>
                 </div>

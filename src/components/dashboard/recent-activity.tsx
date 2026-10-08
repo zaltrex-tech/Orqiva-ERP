@@ -70,15 +70,15 @@ export function RecentActivity() {
       </CardDescription>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs">
+        <table className="w-full text-start text-xs">
           <thead>
             <tr className="border-b border-slate-800/80 text-slate-400">
-              <th className="pb-2.5 font-medium">Trace ID</th>
-              <th className="pb-2.5 font-medium">Action</th>
-              <th className="pb-2.5 font-medium">Domain Entity</th>
-              <th className="pb-2.5 font-medium">Actor</th>
-              <th className="pb-2.5 font-medium">Ledger / State Detail</th>
-              <th className="pb-2.5 font-medium text-right">Verification</th>
+              <th className="pb-2.5 font-medium text-start">Trace ID</th>
+              <th className="pb-2.5 font-medium text-start">Action</th>
+              <th className="pb-2.5 font-medium text-start">Domain Entity</th>
+              <th className="pb-2.5 font-medium text-start">Actor</th>
+              <th className="pb-2.5 font-medium text-start">Ledger / State Detail</th>
+              <th className="pb-2.5 font-medium text-end">Verification</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/50">
@@ -86,17 +86,17 @@ export function RecentActivity() {
               const Icon = evt.icon;
               return (
                 <tr key={evt.id} className="hover:bg-slate-800/30 transition-colors">
-                  <td className="py-3 font-mono text-slate-400">{evt.id}</td>
-                  <td className="py-3">
+                  <td className="py-3 font-mono text-slate-400 text-start">{evt.id}</td>
+                  <td className="py-3 text-start">
                     <span className="inline-flex items-center gap-1.5 font-semibold text-slate-200">
                       <Icon className="w-3.5 h-3.5 text-amber-400" />
                       {evt.action}
                     </span>
                   </td>
-                  <td className="py-3 text-slate-300 font-mono">{evt.entity}</td>
-                  <td className="py-3 text-slate-400">{evt.actor}</td>
-                  <td className="py-3 text-slate-300 max-w-xs truncate">{evt.details}</td>
-                  <td className="py-3 text-right">
+                  <td className="py-3 text-slate-300 font-mono text-start">{evt.entity}</td>
+                  <td className="py-3 text-slate-400 text-start">{evt.actor}</td>
+                  <td className="py-3 text-slate-300 max-w-xs truncate text-start">{evt.details}</td>
+                  <td className="py-3 text-end">
                     <Badge variant={evt.badgeVariant} className="font-mono text-[10px]">
                       {evt.badge}
                     </Badge>

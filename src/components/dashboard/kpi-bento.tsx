@@ -107,7 +107,7 @@ export function KpiBento({ initialData }: { initialData?: KpiData }) {
             hoverEffect
             className="relative overflow-hidden bg-gradient-to-b bg-slate-900/40 border-slate-800 transition-all"
           >
-            <div className={`absolute -right-6 -bottom-6 w-28 h-28 bg-gradient-to-br ${stat.color} rounded-full blur-xl pointer-events-none`} />
+            <div className={`absolute -end-6 -bottom-6 w-28 h-28 bg-gradient-to-br ${stat.color} rounded-full blur-xl pointer-events-none`} />
 
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-medium text-slate-400">{stat.title}</span>

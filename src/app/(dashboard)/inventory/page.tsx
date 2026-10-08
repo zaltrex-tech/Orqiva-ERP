@@ -104,17 +104,17 @@ export default function InventoryPage() {
         </CardHeader>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-start text-xs">
             <thead>
               <tr className="border-b border-slate-800/80 text-slate-400">
-                <th className="pb-3 font-medium">SKU</th>
-                <th className="pb-3 font-medium">Product Description</th>
-                <th className="pb-3 font-medium">Location</th>
-                <th className="pb-3 font-medium">Cost (AVCO)</th>
-                <th className="pb-3 font-medium">Selling Price</th>
+                <th className="pb-3 font-medium text-start">SKU</th>
+                <th className="pb-3 font-medium text-start">Product Description</th>
+                <th className="pb-3 font-medium text-start">Location</th>
+                <th className="pb-3 font-medium text-start">Cost (AVCO)</th>
+                <th className="pb-3 font-medium text-start">Selling Price</th>
                 <th className="pb-3 font-medium text-center">On Hand</th>
                 <th className="pb-3 font-medium text-center">Safety Min</th>
-                <th className="pb-3 font-medium text-right">Stock Status</th>
+                <th className="pb-3 font-medium text-end">Stock Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/50">
@@ -122,21 +122,21 @@ export default function InventoryPage() {
                 const isLow = item.onHand <= item.minAlert;
                 return (
                   <tr key={item.sku} className="hover:bg-slate-800/30 transition-colors">
-                    <td className="py-3.5 font-mono text-amber-400 font-semibold">{item.sku}</td>
-                    <td className="py-3.5 text-slate-200">
+                    <td className="py-3.5 font-mono text-amber-400 font-semibold text-start">{item.sku}</td>
+                    <td className="py-3.5 text-slate-200 text-start">
                       <div>{item.name}</div>
                       <div className="text-[10px] text-slate-400">{item.category}</div>
                     </td>
-                    <td className="py-3.5 text-slate-300 font-mono">{item.location}</td>
-                    <td className="py-3.5 text-slate-300 font-mono">${item.costPrice.toFixed(2)}</td>
-                    <td className="py-3.5 text-slate-100 font-mono font-medium">${item.sellingPrice.toFixed(2)}</td>
+                    <td className="py-3.5 text-slate-300 font-mono text-start">{item.location}</td>
+                    <td className="py-3.5 text-slate-300 font-mono text-start">${item.costPrice.toFixed(2)}</td>
+                    <td className="py-3.5 text-slate-100 font-mono font-medium text-start">${item.sellingPrice.toFixed(2)}</td>
                     <td className="py-3.5 text-center font-mono font-bold text-slate-100">
                       {item.onHand} units
                     </td>
                     <td className="py-3.5 text-center font-mono text-slate-400">
                       {item.minAlert}
                     </td>
-                    <td className="py-3.5 text-right">
+                    <td className="py-3.5 text-end">
                       {isLow ? (
                         <Badge variant="amber" className="font-mono text-[10px]">
                           LOW STOCK

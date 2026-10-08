@@ -136,28 +136,28 @@ export default function HrPage() {
         </CardHeader>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-start text-xs">
             <thead>
               <tr className="border-b border-slate-800/80 text-slate-400">
-                <th className="pb-3 font-medium">Employee Code</th>
-                <th className="pb-3 font-medium">Full Name</th>
-                <th className="pb-3 font-medium">Department</th>
-                <th className="pb-3 font-medium">Job Position</th>
-                <th className="pb-3 font-medium text-right">Basic Monthly Salary</th>
-                <th className="pb-3 font-medium text-right">Status</th>
+                <th className="pb-3 font-medium text-start">Employee Code</th>
+                <th className="pb-3 font-medium text-start">Full Name</th>
+                <th className="pb-3 font-medium text-start">Department</th>
+                <th className="pb-3 font-medium text-start">Job Position</th>
+                <th className="pb-3 font-medium text-end">Basic Monthly Salary</th>
+                <th className="pb-3 font-medium text-end">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/50">
               {employees.map((emp) => (
                 <tr key={emp.code} className="hover:bg-slate-800/30 transition-colors">
-                  <td className="py-3.5 font-mono text-amber-400 font-semibold">{emp.code}</td>
-                  <td className="py-3.5 font-medium text-slate-100">{emp.name}</td>
-                  <td className="py-3.5 text-slate-300">{emp.department}</td>
-                  <td className="py-3.5 text-slate-400">{emp.position}</td>
-                  <td className="py-3.5 text-right font-mono text-slate-200 font-bold">
+                  <td className="py-3.5 font-mono text-amber-400 font-semibold text-start">{emp.code}</td>
+                  <td className="py-3.5 font-medium text-slate-100 text-start">{emp.name}</td>
+                  <td className="py-3.5 text-slate-300 text-start">{emp.department}</td>
+                  <td className="py-3.5 text-slate-400 text-start">{emp.position}</td>
+                  <td className="py-3.5 text-end font-mono text-slate-200 font-bold">
                     ${emp.salary.toFixed(2)}
                   </td>
-                  <td className="py-3.5 text-right">
+                  <td className="py-3.5 text-end">
                     <Badge variant="emerald" className="font-mono text-[10px]">
                       {emp.status}
                     </Badge>

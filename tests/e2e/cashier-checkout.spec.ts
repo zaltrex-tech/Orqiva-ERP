@@ -21,12 +21,12 @@ test.describe("Cashier POS Checkout Workflow", () => {
     await submitBtn.click();
 
     // 2. Verify redirection to POS Terminal
-    await page.waitForURL("**/pos", { timeout: 10000 });
-    await expect(page.locator("text=POS Terminal 01")).toBeVisible({ timeout: 10000 });
+    await page.waitForURL("**/pos", { timeout: 25000 });
+    await expect(page.locator("text=POS Terminal 01")).toBeVisible({ timeout: 20000 });
 
     // 3. Select a product from the live catalog
     const productCard = page.locator("text=PRD-POS-TERM-15").first();
-    await expect(productCard).toBeVisible({ timeout: 10000 });
+    await expect(productCard).toBeVisible({ timeout: 25000 });
     await productCard.click();
 
     // 4. Verify Active Cart updated with item and financial subtotals

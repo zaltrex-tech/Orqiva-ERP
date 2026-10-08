@@ -103,7 +103,7 @@ export default function AccountingPage() {
                 </div>
                 <div className="text-slate-200 font-medium">{acc.name}</div>
               </div>
-              <div className="text-right font-mono font-bold text-slate-100 text-sm">
+              <div className="text-end font-mono font-bold text-slate-100 text-sm">
                 ${acc.balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
               </div>
             </div>
@@ -126,32 +126,32 @@ export default function AccountingPage() {
         </CardHeader>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-start text-xs">
             <thead>
               <tr className="border-b border-slate-800/80 text-slate-400">
-                <th className="pb-3 font-medium">Entry Number</th>
-                <th className="pb-3 font-medium">Journal</th>
-                <th className="pb-3 font-medium">Date</th>
-                <th className="pb-3 font-medium">Reference</th>
-                <th className="pb-3 font-medium text-right">Debit Total</th>
-                <th className="pb-3 font-medium text-right">Credit Total</th>
-                <th className="pb-3 font-medium text-right">Status</th>
+                <th className="pb-3 font-medium text-start">Entry Number</th>
+                <th className="pb-3 font-medium text-start">Journal</th>
+                <th className="pb-3 font-medium text-start">Date</th>
+                <th className="pb-3 font-medium text-start">Reference</th>
+                <th className="pb-3 font-medium text-end">Debit Total</th>
+                <th className="pb-3 font-medium text-end">Credit Total</th>
+                <th className="pb-3 font-medium text-end">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/50">
               {entries.map((entry) => (
                 <tr key={entry.entryNumber} className="hover:bg-slate-800/30 transition-colors">
-                  <td className="py-3.5 font-mono text-amber-400 font-semibold">{entry.entryNumber}</td>
-                  <td className="py-3.5 text-slate-200">{entry.journal}</td>
-                  <td className="py-3.5 text-slate-400 font-mono">{entry.date}</td>
-                  <td className="py-3.5 text-slate-300 font-mono">{entry.reference}</td>
-                  <td className="py-3.5 text-right font-mono text-emerald-400 font-medium">
+                  <td className="py-3.5 font-mono text-amber-400 font-semibold text-start">{entry.entryNumber}</td>
+                  <td className="py-3.5 text-slate-200 text-start">{entry.journal}</td>
+                  <td className="py-3.5 text-slate-400 font-mono text-start">{entry.date}</td>
+                  <td className="py-3.5 text-slate-300 font-mono text-start">{entry.reference}</td>
+                  <td className="py-3.5 text-end font-mono text-emerald-400 font-medium">
                     ${entry.totalDebit.toFixed(2)}
                   </td>
-                  <td className="py-3.5 text-right font-mono text-emerald-400 font-medium">
+                  <td className="py-3.5 text-end font-mono text-emerald-400 font-medium">
                     ${entry.totalCredit.toFixed(2)}
                   </td>
-                  <td className="py-3.5 text-right">
+                  <td className="py-3.5 text-end">
                     <Badge variant="emerald" className="font-mono text-[10px]">
                       {entry.status}
                     </Badge>

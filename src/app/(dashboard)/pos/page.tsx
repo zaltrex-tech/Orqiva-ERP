@@ -326,7 +326,7 @@ export default function PosPage() {
                 </Badge>
               </CardHeader>
 
-              <div className="overflow-y-auto max-h-[300px] space-y-2 pr-1">
+              <div className="overflow-y-auto max-h-[300px] space-y-2 pe-1">
                 {cart.length === 0 ? (
                   <div className="text-center py-16 text-slate-400 text-xs">
                     Cart is empty. Tap products to add to current ticket.
@@ -360,7 +360,7 @@ export default function PosPage() {
                             <Plus className="w-3 h-3" />
                           </button>
                         </div>
-                        <div className="font-mono font-semibold text-slate-100 w-16 text-right">
+                        <div className="font-mono font-semibold text-slate-100 w-16 text-end">
                           ${(item.price * item.qty).toFixed(2)}
                         </div>
                       </div>

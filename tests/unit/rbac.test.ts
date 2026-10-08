@@ -7,12 +7,14 @@ describe("Granular Role-Based Access Control (RBAC)", () => {
     expect(hasPermission("SUPER_ADMIN", "accounting:view_ledger")).toBe(true);
     expect(hasPermission("SUPER_ADMIN", "pos:process_sale")).toBe(true);
     expect(hasPermission("SUPER_ADMIN", "audit:view_logs")).toBe(true);
+    expect(hasPermission("SUPER_ADMIN", "admin:manage_users")).toBe(true);
   });
 
   it("should restrict Cashier from accessing General Ledger or Admin configs", () => {
     expect(hasPermission("CASHIER", "pos:process_sale")).toBe(true);
     expect(hasPermission("CASHIER", "accounting:view_ledger")).toBe(false);
     expect(hasPermission("CASHIER", "admin:system_config")).toBe(false);
+    expect(hasPermission("CASHIER", "admin:manage_users")).toBe(false);
     expect(hasPermission("CASHIER", "inventory:adjust_stock")).toBe(false);
   });
 
