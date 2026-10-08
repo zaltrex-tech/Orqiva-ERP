@@ -69,8 +69,8 @@ export class PosService {
     try {
       // 2. Perform Inventory Deduction first to ensure stock availability under lock
       const transferRes = await StockService.transferStock({
-        tenantId,
-        actorId: cashierId,
+        tenantId: session.tenantId,
+        actorId: session.cashierId,
         reference: `POS-SALE/${orderNumber}`,
         sourceLocationId: stockLocationId,
         destLocationId: customerLocationId,
@@ -86,7 +86,7 @@ export class PosService {
       const order = await prisma.$transaction(async (tx) => {
         const createdOrder = await tx.posOrder.create({
           data: {
-            tenantId,
+            tenantId: session.tenantId,
             sessionId,
             orderNumber,
             totalAmount,

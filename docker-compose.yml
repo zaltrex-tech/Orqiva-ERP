@@ -1,0 +1,107 @@
+version: "3.9"
+
+services:
+  # -------------------------------------------------------------
+  # 1. PostgreSQL 16 Enterprise Database
+  # -------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: orqiva-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-orqiva_erp}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-orqiva_erp}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - orqiva-network
+
+  # -------------------------------------------------------------
+  # 2. Redis 7 In-Memory Cache & BullMQ Queue Store
+  # -------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: orqiva-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - orqiva-network
+
+  # -------------------------------------------------------------
+  # 3. Next.js 15 Web Application (Modular Monolith)
+  # -------------------------------------------------------------
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    container_name: orqiva-web
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-orqiva_erp}?schema=public
+      DIRECT_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-orqiva_erp}?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:-orqiva-enterprise-super-secret-key-change-in-production-min-32-chars}
+      APP_URL: ${APP_URL:-http://localhost:3000}
+    networks:
+      - orqiva-network
+
+  # -------------------------------------------------------------
+  # 4. BullMQ Background Task Worker
+  # -------------------------------------------------------------
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: worker
+    container_name: orqiva-worker
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-orqiva_erp}?schema=public
+      DIRECT_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-orqiva_erp}?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:-orqiva-enterprise-super-secret-key-change-in-production-min-32-chars}
+    networks:
+      - orqiva-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  orqiva-network:
+    driver: bridge

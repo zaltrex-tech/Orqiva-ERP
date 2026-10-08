@@ -39,6 +39,7 @@ interface CartItem extends ProductItem {
 interface ActiveSessionData {
   id: string;
   sessionNumber: string;
+  cashierId?: string;
   cashierName: string;
   openingBalance: number;
   totalSales: number;
@@ -148,7 +149,7 @@ export default function PosPage() {
 
     const payload = {
       tenantId: "ORQ-MAIN",
-      cashierId: session.cashierName || "cashier-user",
+      cashierId: session.cashierId || "cashier-user",
       sessionId: session.id,
       orderNumber,
       stockLocationId: locations.stockLocationId,

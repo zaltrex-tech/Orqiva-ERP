@@ -46,6 +46,7 @@ export async function GET() {
           ? {
               id: session.id,
               sessionNumber: session.sessionNumber,
+              cashierId: session.cashierId,
               cashierName: session.cashier.fullName,
               openingBalance: Number(session.openingBalance),
               totalSales: Number(session.totalSales),
