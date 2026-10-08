@@ -1,0 +1,145 @@
+name: Orqiva ERP CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_ENV: test
+  DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/orqiva_erp?schema=public"
+  DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/orqiva_erp?schema=public"
+  JWT_SECRET: "ci-cd-pipeline-test-token-secret-minimum-32-chars-long"
+
+jobs:
+  # -------------------------------------------------------------
+  # 1. Quality Assurance & Static Typing
+  # -------------------------------------------------------------
+  lint-and-typecheck:
+    name: Lint & Typecheck
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Run TypeScript Static Analysis
+        run: npx tsc --noEmit
+
+  # -------------------------------------------------------------
+  # 2. Automated Unit & Business Invariant Tests
+  # -------------------------------------------------------------
+  unit-tests:
+    name: Unit & Domain Invariant Tests
+    needs: [lint-and-typecheck]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Run Vitest Suite
+        run: npm run test
+
+  # -------------------------------------------------------------
+  # 3. Container Image Build Verification
+  # -------------------------------------------------------------
+  docker-build:
+    name: Docker Container Build
+    needs: [unit-tests]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: actions/setup-buildx-action@v3
+
+      - name: Build Web Target
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          target: runner
+          tags: orqiva-erp-web:latest
+          push: false
+          load: true
+
+      - name: Build Worker Target
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          target: worker
+          tags: orqiva-erp-worker:latest
+          push: false
+          load: true
+
+  # -------------------------------------------------------------
+  # 4. Production Deployment to Ubuntu 24.04
+  # -------------------------------------------------------------
+  deploy-production:
+    name: Deploy to Production (Ubuntu 24.04)
+    needs: [docker-build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    environment: production
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH & Docker Compose
+        if: env.DEPLOY_HOST != ''
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER || 'deploy' }}
+          DEPLOY_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          echo "Initiating production rollout on Ubuntu 24.04 target..."
+          # Secure SSH authentication setup
+          mkdir -p ~/.ssh
+          echo "$DEPLOY_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+          # Execute deployment on server
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" << 'EOF'
+            set -e
+            cd /opt/orqiva-erp || git clone https://github.com/zaltrex-tech/Orqiva-ERP.git /opt/orqiva-erp
+            cd /opt/orqiva-erp
+            git fetch origin main
+            git reset --hard origin/main
+            docker compose pull || true
+            docker compose build
+            docker compose run --rm web npx prisma migrate deploy
+            docker compose up -d --remove-orphans
+            docker image prune -f
+          EOF
+          echo "Production rollout completed successfully."
