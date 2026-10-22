@@ -1,69 +1,22 @@
-# ------------------------------------------------------------------------------
-# Orqiva ERP - Multi-Stage Production Dockerfile
-# Optimized for Next.js 15 Standalone Output & BullMQ Background Worker
-# ------------------------------------------------------------------------------
-
-# 1. Base Dependencies Stage
-FROM node:22-alpine AS deps
-RUN apk add --no-cache libc6-compat openssl
+FROM node:22-bookworm-slim AS builder
 WORKDIR /app
-
-COPY package.json package-lock.json ./
+COPY package*.json ./
 RUN npm ci
-
-# 2. Builder Stage
-FROM node:22-alpine AS builder
-RUN apk add --no-cache openssl
-WORKDIR /app
-
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN npm run build && npm prune --omit=dev
 
-# Generate Prisma Client & Run Next.js Production Build
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_ENV=production
-
-RUN npx prisma generate
-RUN npm run build
-
-# 3. Web Service Runner Stage (Minimal Footprint)
-FROM node:22-alpine AS runner
-RUN apk add --no-cache openssl
+FROM node:22-bookworm-slim AS runtime
+ENV NODE_ENV=production PORT=3001 DATABASE_PATH=/app/data/orqiva.db SEED_DEMO=false
 WORKDIR /app
-
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
-
-# Security: Create non-root system user
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
-
-# Copy standalone build and assets
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-
-USER nextjs
-
-EXPOSE 3000
-
-CMD ["node", "server.js"]
-
-# 4. Background Worker Runner Stage
-FROM node:22-alpine AS worker
-RUN apk add --no-cache openssl
-WORKDIR /app
-
-ENV NODE_ENV=production
-
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 orqivaworker
-
-COPY --from=builder /app ./
-
-USER orqivaworker
-
-CMD ["npm", "run", "worker"]
+COPY --from=builder --chown=node:node /app/package*.json ./
+COPY --from=builder --chown=node:node /app/node_modules ./node_modules
+COPY --from=builder --chown=node:node /app/dist ./dist
+COPY --from=builder --chown=node:node /app/server ./server
+COPY --from=builder --chown=node:node /app/src/types.ts ./src/types.ts
+COPY --from=builder --chown=node:node /app/database ./database
+COPY --chown=node:node docker/entrypoint.sh ./docker/entrypoint.sh
+RUN mkdir -p /app/data /app/backups && chown -R node:node /app/data /app/backups && chmod +x /app/docker/entrypoint.sh
+USER node
+EXPOSE 3001
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 CMD node -e "fetch('http://127.0.0.1:3001/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+ENTRYPOINT ["/app/docker/entrypoint.sh"]
